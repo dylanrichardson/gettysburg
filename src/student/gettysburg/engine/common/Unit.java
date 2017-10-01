@@ -21,7 +21,7 @@ import gettysburg.common.*;
  * 
  * @version Jun 11, 2017
  */
-public class GbgUnitImpl implements GbgUnit {
+public class Unit implements GbgUnit {
 
 	private ArmyID armyID;
 	private int combatFactor;
@@ -35,7 +35,7 @@ public class GbgUnitImpl implements GbgUnit {
 	 * Default constructor needed for JSON processing. When creating
 	 * a unit directly, use the factory method.
 	 */
-	public GbgUnitImpl() {
+	public Unit() {
 		armyID = null;
 		combatFactor = 0;
 		facing = null;
@@ -48,7 +48,7 @@ public class GbgUnitImpl implements GbgUnit {
 	/**
 	 * Copy constructor.
 	 */
-	public GbgUnitImpl(GbgUnit unit) {
+	public Unit(GbgUnit unit) {
 		armyID = unit.getArmy();
 		combatFactor = unit.getCombatFactor();
 		facing = unit.getFacing();
@@ -71,7 +71,7 @@ public class GbgUnitImpl implements GbgUnit {
 	 */
 	public static GbgUnit makeUnit(ArmyID armyID, int combatFactor, Direction facing, 
 			String leader, int movementFactor, UnitSize unitSize, UnitType unitType) {
-		final GbgUnitImpl unit = new GbgUnitImpl();
+		final Unit unit = new Unit();
 		unit.armyID = armyID;
 		unit.combatFactor = combatFactor;
 		unit.facing = facing;
@@ -80,6 +80,10 @@ public class GbgUnitImpl implements GbgUnit {
 		unit.unitSize = unitSize;
 		unit.unitType = unitType;
 		return unit;
+	}
+
+	static GbgUnit makeUnit(ArmyID armyID, String leader) {
+		return makeUnit(armyID, 0, null, leader, 0, null, null);
 	}
 	
 	/*
@@ -184,10 +188,10 @@ public class GbgUnitImpl implements GbgUnit {
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof GbgUnitImpl)) {
+		if (!(obj instanceof Unit)) {
 			return false;
 		}
-		GbgUnitImpl other = (GbgUnitImpl) obj;
+		Unit other = (Unit) obj;
 		if (armyID != other.armyID) {
 			return false;
 		}

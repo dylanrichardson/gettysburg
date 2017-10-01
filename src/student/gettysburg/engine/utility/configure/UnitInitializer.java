@@ -11,8 +11,8 @@
  *******************************************************************************/
 package student.gettysburg.engine.utility.configure;
 
-import static student.gettysburg.engine.common.CoordinateImpl.makeCoordinate;
-import static student.gettysburg.engine.common.GbgUnitImpl.makeUnit;
+import static student.gettysburg.engine.common.Coordinate.makeCoordinate;
+import static student.gettysburg.engine.common.Unit.makeUnit;
 import gettysburg.common.*;
 /**
  * A simple class with a single static method that returns the order of battle for
@@ -22,27 +22,41 @@ import gettysburg.common.*;
  */
 public class UnitInitializer
 {
-	public int turn;
-	public Coordinate where;
-	public GbgUnit unit;
+	private int turn;
+	private Coordinate where;
+	private GbgUnit unit;
 	
 	/**
 	 * Default constructor.
 	 */
-	public UnitInitializer()
-	{
+	public UnitInitializer() {
 		turn = 0;
 		where = null;
 		unit = null;
 	}
 	
-	public UnitInitializer(int turn, int x, int y, ArmyID id, int combatFactor, 
-			Direction facing, String leader, int movementFactor,
-			UnitSize unitSize, UnitType unitType)
-	{
+	UnitInitializer(int turn, int x, int y, ArmyID id, int combatFactor,
+					Direction facing, String leader, int movementFactor,
+					UnitSize unitSize, UnitType unitType) {
 		this.turn = turn;
 		this.where = makeCoordinate(x, y);
 		this.unit = makeUnit(id, combatFactor, facing, leader, movementFactor, 
 				unitSize, unitType);
+	}
+
+	public GbgUnit getUnit() {
+		return unit;
+	}
+
+	public Coordinate getWhere() {
+		return where;
+	}
+
+	public int getTurn() {
+		return turn;
+	}
+
+	public ArmyID getArmyID() {
+		return unit.getArmy();
 	}
 }

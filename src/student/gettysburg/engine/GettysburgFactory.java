@@ -11,14 +11,12 @@
  *******************************************************************************/
 package student.gettysburg.engine;
 
-import java.util.Collection;
-import gettysburg.common.*;
+import gettysburg.common.GbgGame;
+import gettysburg.common.TestGbgGame;
 import gettysburg.common.exceptions.GbgNotImplementedException;
-import org.junit.Test;
-import student.gettysburg.engine.common.CoordinateImpl;
-import student.gettysburg.engine.common.GbgGameImpl;
-
-import static junit.framework.TestCase.assertEquals;
+import student.gettysburg.engine.common.Coordinate;
+import student.gettysburg.engine.common.Game;
+import student.gettysburg.engine.common.TestGame;
 
 /**
  * A factory class that contains creation methods for all of the components of
@@ -33,7 +31,7 @@ public final class GettysburgFactory
 	 */
 	public static GbgGame makeGame()
 	{
-		return new GbgGameImpl();
+		return new Game();
 	}
 	
 	/**
@@ -51,18 +49,27 @@ public final class GettysburgFactory
 	{
 		throw new GbgNotImplementedException("makeGame()");
 	}
-	
+
+
+	/**
+	 * Creation method for a test Gettysburg game
+	 * @return the TestGbgGame instance
+	 */
+	public static TestGbgGame makeTestGame() {
+		return new TestGame();
+	}
+
 	/**
 	 * Factory method for creating Coordinates. This method makes a Coordinate
-	 * instance that is used by the GbgGameImpl implementation and internal
+	 * instance that is used by the Game implementation and internal
 	 * to the engine's classes. There is no requirement by the client that objects
 	 * of this type are used to implement the Coordinate interface.
 	 * @param x the x-coordinate
 	 * @param y the y-coordinate
 	 * @return the Coordinate object as implemented by the Gettysburg engine.
 	 */
-	public static Coordinate makeCoordinate(int x, int y)
+	public static gettysburg.common.Coordinate makeCoordinate(int x, int y)
 	{
-		return CoordinateImpl.makeCoordinate(x, y);
+		return Coordinate.makeCoordinate(x, y);
 	}
 }

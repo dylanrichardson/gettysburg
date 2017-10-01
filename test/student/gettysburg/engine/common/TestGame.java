@@ -12,63 +12,45 @@
 package student.gettysburg.engine.common;
 
 import gettysburg.common.*;
-import student.gettysburg.engine.common.GbgGameImpl;
+
+import static student.gettysburg.engine.common.Coordinate.makeCoordinate;
 
 /**
  * Test implementation of the Gettysburg game.
  * @version Jul 31, 2017
  */
-public class TestGbgGameImpl extends GbgGameImpl implements TestGbgGame
-{
+public class TestGame extends Game implements TestGbgGame {
 
 	/*
 	 * @see gettysburg.common.TestGbgGame#clearBoard()
 	 */
 	@Override
-	public void clearBoard()
-	{
-		// TODO Auto-generated method stub
-
+	public void clearBoard() {
+		board.clear();
 	}
 
 	/*
 	 * @see gettysburg.common.TestGbgGame#putUnitAt(gettysburg.common.GbgUnit, int, int, gettysburg.common.Direction)
 	 */
 	@Override
-	public void putUnitAt(GbgUnit arg0, int arg1, int arg2, Direction arg3)
-	{
-		// TODO Auto-generated method stub
-
-	}
-
-	/*
-	 * @see gettysburg.common.TestGbgGame#setBattleResult(gettysburg.common.BattleDescriptor, gettysburg.common.BattleResult)
-	 */
-	@Override
-	public void setBattleResult(BattleDescriptor arg0, BattleResult arg1)
-	{
-		// TODO Auto-generated method stub
-
+	public void putUnitAt(GbgUnit unit, int x, int y, Direction facing) {
+		board.placeUnit(unit, makeCoordinate(x, y));
+		board.getUnit(unit).setFacing(facing);
 	}
 
 	/*
 	 * @see gettysburg.common.TestGbgGame#setGameStep(gettysburg.common.GbgGameStep)
 	 */
 	@Override
-	public void setGameStep(GbgGameStep arg0)
-	{
-		// TODO Auto-generated method stub
-
+	public void setGameStep(GbgGameStep step) {
+		currentStep = step;
 	}
 
 	/*
 	 * @see gettysburg.common.TestGbgGame#setGameTurn(int)
 	 */
 	@Override
-	public void setGameTurn(int arg0)
-	{
-		// TODO Auto-generated method stub
-
+	public void setGameTurn(int turn) {
+		currentTurn = turn;
 	}
-
 }

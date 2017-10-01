@@ -11,11 +11,11 @@
  *******************************************************************************/
 package student.gettysburg.engine.common;
 
-import gettysburg.common.*;
+import gettysburg.common.Direction;
+import gettysburg.common.GbgBoard;
 import gettysburg.common.exceptions.GbgInvalidCoordinateException;
 
 import static gettysburg.common.Direction.*;
-import static java.lang.Math.abs;
 import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
 
@@ -27,7 +27,7 @@ import static java.lang.Math.sqrt;
  * 
  * @version Jun 9, 2017
  */
-public class CoordinateImpl implements Coordinate
+public class Coordinate implements gettysburg.common.Coordinate
 {
 	private final int x, y;
 	
@@ -36,7 +36,7 @@ public class CoordinateImpl implements Coordinate
 	 * @param x
 	 * @param y
 	 */
-	private CoordinateImpl(int x, int y)
+	private Coordinate(int x, int y)
 	{
 		this.x = x;
 		this.y = y;
@@ -45,7 +45,7 @@ public class CoordinateImpl implements Coordinate
 	/**
 	 * Needed for JSON processing.
 	 */
-	public CoordinateImpl()
+	public Coordinate()
 	{
 		x = y = 0;
 	}
@@ -56,20 +56,30 @@ public class CoordinateImpl implements Coordinate
 	 * @param y
 	 * @return
 	 */
-	public static CoordinateImpl makeCoordinate(int x, int y)
+	public static Coordinate makeCoordinate(int x, int y)
 	{
 		if (x < 1 || x > GbgBoard.COLUMNS || y < 1 || y > GbgBoard.ROWS) {
 			throw new GbgInvalidCoordinateException(
 					"Coordinates for (" + x + ", " + y + ") are out of bounds.");
 		}
-		return new CoordinateImpl(x, y);
+		return new Coordinate(x, y);
+	}
+
+	/**
+	 * Factory method for copying Coordinates.
+	 * @param coordinate
+	 * @return
+	 */
+	public static Coordinate makeCoordinate(gettysburg.common.Coordinate coordinate)
+	{
+		return makeCoordinate(coordinate.getX(), coordinate.getY());
 	}
 	
 	/*
 	 * @see gettysburg.common.Coordinate#directionTo(gettysburg.common.Coordinate)
 	 */
 	@Override
-	public Direction directionTo(Coordinate coordinate) {
+	public Direction directionTo(gettysburg.common.Coordinate coordinate) {
 		if (coordinate.getX() > x) {
 			if (coordinate.getY() < y) {
 				return NORTHEAST;
@@ -99,7 +109,7 @@ public class CoordinateImpl implements Coordinate
 	 * @see gettysburg.common.Coordinate#distanceTo(gettysburg.common.Coordinate)
 	 */
 	@Override
-	public int distanceTo(Coordinate coordinate) {
+	public int distanceTo(gettysburg.common.Coordinate coordinate) {
 		return (int) sqrt(pow(coordinate.getX() - x, 2) + pow(coordinate.getY() - y, 2));
 	}
 
@@ -134,7 +144,7 @@ public class CoordinateImpl implements Coordinate
 	}
 
 	/*
-	 * We do not compare a CoordinateImpl to any object that just implements
+	 * We do not compare a Coordinate to any object that just implements
 	 * the Coordinate interface.
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
@@ -147,10 +157,10 @@ public class CoordinateImpl implements Coordinate
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof CoordinateImpl)) {
+		if (!(obj instanceof Coordinate)) {
 			return false;
 		}
-		CoordinateImpl other = (CoordinateImpl) obj;
+		Coordinate other = (Coordinate) obj;
 		if (x != other.x) {
 			return false;
 		}

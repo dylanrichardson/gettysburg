@@ -1,134 +1,106 @@
 package student.gettysburg.engine.common;
 
 import gettysburg.common.*;
+import gettysburg.common.Coordinate;
 import gettysburg.common.exceptions.GbgInvalidActionException;
 import gettysburg.common.exceptions.GbgInvalidMoveException;
+import org.junit.Before;
 import org.junit.Test;
-import student.gettysburg.engine.utility.configure.BattleOrder;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import static gettysburg.common.ArmyID.CONFEDERATE;
 import static gettysburg.common.ArmyID.UNION;
 import static gettysburg.common.Direction.*;
-import static gettysburg.common.GbgGameStatus.UNION_WINS;
 import static gettysburg.common.GbgGameStep.*;
-import static org.junit.Assert.*;
-import static student.gettysburg.engine.common.CoordinateImpl.makeCoordinate;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static student.gettysburg.engine.GettysburgFactory.makeTestGame;
+import static student.gettysburg.engine.common.Coordinate.makeCoordinate;
+import static student.gettysburg.engine.common.Unit.makeUnit;
 import static student.gettysburg.engine.utility.configure.BattleOrder.getConfederateBattleOrder;
 import static student.gettysburg.engine.utility.configure.BattleOrder.getUnionBattleOrder;
 
-public class GbgGameImplTest {
+public class GameTest {
 
-    private static final GbgUnit GAMBLE = getUnionBattleOrder()[0].unit;
-    private static final GbgUnit DEVIN = getUnionBattleOrder()[1].unit;
-    private static final GbgUnit HETH = getConfederateBattleOrder()[0].unit;
+    private static final GbgUnit GAMBLE = getUnionBattleOrder()[0].getUnit();
+    private static final GbgUnit DEVIN = getUnionBattleOrder()[1].getUnit();
+    private static final GbgUnit HETH = getConfederateBattleOrder()[0].getUnit();
+
+    private GbgGame game;
+    private TestGbgGame testGame;
+
+    @Before
+    public void setup() {
+        game = testGame = makeTestGame();
+    }
 
     @Test
     public void newGameStartsOnTurnOne() {
-        GbgGame game = new GbgGameImpl();
         assertEquals(1, game.getTurnNumber());
     }
 
     @Test
     public void newGameStartsOnUnionMove() {
-        GbgGame game = new GbgGameImpl();
         assertEquals(UMOVE, game.getCurrentStep());
     }
 
+    // whereIsUnit
+
     @Test
     public void newGameStartsWithGambleAtCorrectSquare() {
-        GbgGame game = new GbgGameImpl();
         assertEquals(makeCoordinate(11, 11), game.whereIsUnit(GAMBLE));
     }
 
     @Test
     public void newGameStartsWithDevinAtCorrectSquare() {
-        GbgGame game = new GbgGameImpl();
         assertEquals(makeCoordinate(13, 9), game.whereIsUnit(DEVIN));
     }
 
     @Test
     public void newGameStartsWithHethAtCorrectSquare() {
-        GbgGame game = new GbgGameImpl();
         assertEquals(makeCoordinate(8, 8), game.whereIsUnit(HETH));
     }
 
-    @Test
-    public void endBattleStepAdvancesStep() {
-        GbgGame game = new GbgGameImpl();
-        game.endStep();
-        game.endStep();
-        game.endBattleStep();
-        assertEquals(CBATTLE, game.getCurrentStep());
-    }
-
-    @Test(expected = GbgInvalidActionException.class)
-    public void endBattleStepDuringMoveStep() {
-        GbgGame game = new GbgGameImpl();
-        game.endBattleStep();
-    }
-
-    @Test
-    public void endMoveStepAdvancesStep() {
-        GbgGame game = new GbgGameImpl();
-        game.endMoveStep();
-        assertEquals(CMOVE, game.getCurrentStep());
-    }
-
-    @Test(expected = GbgInvalidActionException.class)
-    public void endMoveStepDuringBattleStep() {
-        GbgGame game = new GbgGameImpl();
-        game.endStep();
-        game.endStep();
-        game.endMoveStep();
-    }
-
-    @Test
-    public void endStepFourTimesEndsGame() {
-        GbgGame game = new GbgGameImpl();
-        assertEquals(CMOVE, game.endStep());
-        assertEquals(UBATTLE, game.endStep());
-        assertEquals(CBATTLE, game.endStep());
-        assertEquals(UMOVE, game.endStep());
-        assertEquals(UNION_WINS, game.getGameStatus());
-    }
+    // getUnitFacing
 
     @Test
     public void getUnitFacingWest() {
-        GbgGame game = new GbgGameImpl();
         assertEquals(WEST, game.getUnitFacing(GAMBLE));
     }
 
     @Test
     public void getUnitFacingSouth() {
-        GbgGame game = new GbgGameImpl();
         assertEquals(SOUTH, game.getUnitFacing(DEVIN));
     }
 
     @Test
     public void getUnitFacingEast() {
-        GbgGame game = new GbgGameImpl();
         assertEquals(EAST, game.getUnitFacing(HETH));
     }
 
+    // getUnitsAt
+
     @Test
     public void getUnitsAtCoordinateWithOneUnit() {
-        GbgGame game = new GbgGameImpl();
         GbgUnit unit = game.getUnitsAt(makeCoordinate(11, 11)).iterator().next();
         assertEquals(GAMBLE, unit);
     }
 
     @Test
     public void getUnitsAtCoordinateWithNoUnits() {
-        GbgGame game = new GbgGameImpl();
-        Collection<GbgUnit> units = game.getUnitsAt(makeCoordinate(11, 12));
-        assertTrue(units.isEmpty());
+        assertNull(game.getUnitsAt(makeCoordinate(11, 12)));
     }
+
+    // moveUnit
 
     @Test
     public void moveUnitWhenTurnToValidSquare() {
-        GbgGame game = new GbgGameImpl();
         Coordinate to = makeCoordinate(11, 12);
         game.moveUnit(GAMBLE, makeCoordinate(11, 11), to);
         assertEquals(to, game.whereIsUnit(GAMBLE));
@@ -136,31 +108,28 @@ public class GbgGameImplTest {
 
     @Test(expected = GbgInvalidActionException.class)
     public void moveUnitWhenNotTurn() {
-        GbgGame game = new GbgGameImpl();
         game.moveUnit(HETH, makeCoordinate(8, 8), makeCoordinate(8, 9));
     }
 
     @Test(expected = GbgInvalidMoveException.class)
     public void moveUnitWhenTurnFromInvalidSquare() {
-        GbgGame game = new GbgGameImpl();
         game.moveUnit(GAMBLE, makeCoordinate(11, 12), makeCoordinate(11, 13));
     }
 
     @Test(expected = GbgInvalidMoveException.class)
     public void moveUnitWhenTurnToOutOfReachSquare() {
-        GbgGame game = new GbgGameImpl();
         game.moveUnit(GAMBLE, makeCoordinate(11, 11), makeCoordinate(11, 16));
     }
 
     @Test(expected = GbgInvalidMoveException.class)
     public void moveUnitWhenTurnToOccupiedSquare() {
-        GbgGame game = new GbgGameImpl();
         game.moveUnit(GAMBLE, makeCoordinate(11, 11), makeCoordinate(11, 11));
     }
 
+    // setUnitFacing
+
     @Test
     public void setUnitFacingDuringMove() {
-        GbgGame game = new GbgGameImpl();
         game.setUnitFacing(DEVIN, NORTH);
         assertEquals(NORTH, game.getUnitFacing(DEVIN));
         assertEquals(SOUTH, DEVIN.getFacing());
@@ -168,8 +137,36 @@ public class GbgGameImplTest {
 
     @Test(expected = GbgInvalidActionException.class)
     public void setUnitFacingNotDuringMove() {
-        GbgGame game = new GbgGameImpl();
         game.setUnitFacing(HETH, NORTH);
+    }
+
+    // placeReinforcements
+
+    @Test
+    public void placeReinforcements() {
+        testGame.setGameTurn(2);
+        testGame.setGameStep(CBATTLE);
+        game.endStep();
+        assertEquals(makeCoordinate(14, 28), game.whereIsUnit("Howard", UNION));
+        assertEquals(makeCoordinate(14, 28), game.whereIsUnit("von Steinwehr", UNION));
+        assertEquals(makeCoordinate(14, 28), game.whereIsUnit("Schurz", UNION));
+        assertEquals(makeCoordinate(7, 28), game.whereIsUnit("Barlow", UNION));
+    }
+
+    // getBattlesToResolve
+
+    @Test
+    public void getBattlesToResolve() {
+        GbgUnit unitA = makeUnit(UNION, "A");
+        GbgUnit unitB = makeUnit(CONFEDERATE, "B");
+        testGame.clearBoard();
+        testGame.putUnitAt(unitA, 5, 5, EAST);
+        testGame.putUnitAt(unitB, 6, 5, WEST);
+        Collection<BattleDescriptor> battlesToResolve = singletonList(
+                new Battle(singletonList(unitA), singletonList(unitB))
+        );
+
+        assertEquals(battlesToResolve, game.getBattlesToResolve());
     }
 
 }
