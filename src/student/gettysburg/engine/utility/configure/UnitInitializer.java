@@ -11,7 +11,7 @@
  *******************************************************************************/
 package student.gettysburg.engine.utility.configure;
 
-import static student.gettysburg.engine.common.Coordinate.makeCoordinate;
+import static student.gettysburg.engine.common.Cell.makeCell;
 import static student.gettysburg.engine.common.Unit.makeUnit;
 import gettysburg.common.*;
 /**
@@ -34,14 +34,17 @@ public class UnitInitializer
 		where = null;
 		unit = null;
 	}
+
+	public UnitInitializer(int turn, Coordinate where, GbgUnit unit) {
+		this.turn = turn;
+		this.where = where;
+		this.unit = unit;
+	}
 	
 	UnitInitializer(int turn, int x, int y, ArmyID id, int combatFactor,
 					Direction facing, String leader, int movementFactor,
 					UnitSize unitSize, UnitType unitType) {
-		this.turn = turn;
-		this.where = makeCoordinate(x, y);
-		this.unit = makeUnit(id, combatFactor, facing, leader, movementFactor, 
-				unitSize, unitType);
+		this(turn, makeCell(x, y), makeUnit(id, combatFactor, facing, leader, movementFactor, unitSize, unitType));
 	}
 
 	public GbgUnit getUnit() {

@@ -11,10 +11,10 @@
  *******************************************************************************/
 package student.gettysburg.engine;
 
+import gettysburg.common.Coordinate;
 import gettysburg.common.GbgGame;
 import gettysburg.common.TestGbgGame;
-import gettysburg.common.exceptions.GbgNotImplementedException;
-import student.gettysburg.engine.common.Coordinate;
+import student.gettysburg.engine.common.Cell;
 import student.gettysburg.engine.common.Game;
 import student.gettysburg.engine.common.TestGame;
 
@@ -33,23 +33,6 @@ public final class GettysburgFactory
 	{
 		return new Game();
 	}
-	
-	/**
-	 * Creation for a new Gettysburg game instance. In this case the
-	 * client can specify a version, such as "alpha", or some other
-	 * string that indicates that a version of the game with limited
-	 * or extended capabilities should be produced. The valid version
-	 * strings are defined by the instructor for the course. If the
-	 * string is invalid, throw a GbgNotImplementedException.
-	 * 
-	 * @param version the version to create
-	 * @return an instance of the specific version of the Gettysburg game
-	 */
-	public static GbgGame makeGame(String version)
-	{
-		throw new GbgNotImplementedException("makeGame()");
-	}
-
 
 	/**
 	 * Creation method for a test Gettysburg game
@@ -60,16 +43,16 @@ public final class GettysburgFactory
 	}
 
 	/**
-	 * Factory method for creating Coordinates. This method makes a Coordinate
+	 * Factory method for creating Coordinates. This method makes a Cell
 	 * instance that is used by the Game implementation and internal
 	 * to the engine's classes. There is no requirement by the client that objects
-	 * of this type are used to implement the Coordinate interface.
+	 * of this type are used to implement the Cell interface.
 	 * @param x the x-coordinate
 	 * @param y the y-coordinate
-	 * @return the Coordinate object as implemented by the Gettysburg engine.
+	 * @return the Cell object as implemented by the Gettysburg engine.
 	 */
-	public static gettysburg.common.Coordinate makeCoordinate(int x, int y)
+	public static Coordinate makeCoordinate(int x, int y)
 	{
-		return Coordinate.makeCoordinate(x, y);
+		return Cell.makeCell(x, y);
 	}
 }

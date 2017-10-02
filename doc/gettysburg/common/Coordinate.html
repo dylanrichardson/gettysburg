@@ -137,15 +137,15 @@ var activeTableTab = "activeTableTab";
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>default <a href="../../gettysburg/common/Direction.html" title="enum in gettysburg.common">Direction</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../gettysburg/common/Coordinate.html#directionTo-gettysburg.common.Coordinate-">directionTo</a></span>(<a href="../../gettysburg/common/Coordinate.html" title="interface in gettysburg.common">Coordinate</a>&nbsp;coordinate)</code>
-<div class="block">Given a target coordinate, return the direction of that coordinate relative
- to this coordinate.</div>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../gettysburg/common/Coordinate.html#directionTo-gettysburg.common.Coordinate-">directionTo</a></span>(<a href="../../gettysburg/common/Coordinate.html" title="interface in gettysburg.common">Coordinate</a>&nbsp;cell)</code>
+<div class="block">Given a target cell, return the direction of that cell relative
+ to this cell.</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>default int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../gettysburg/common/Coordinate.html#distanceTo-gettysburg.common.Coordinate-">distanceTo</a></span>(<a href="../../gettysburg/common/Coordinate.html" title="interface in gettysburg.common">Coordinate</a>&nbsp;coordinate)</code>
-<div class="block">Return the distance to the specified coordinate from this coordinate.</div>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../gettysburg/common/Coordinate.html#distanceTo-gettysburg.common.Coordinate-">distanceTo</a></span>(<a href="../../gettysburg/common/Coordinate.html" title="interface in gettysburg.common">Coordinate</a>&nbsp;cell)</code>
+<div class="block">Return the distance to the specified cell from this cell.</div>
 </td>
 </tr>
 <tr id="i2" class="altColor">
@@ -188,7 +188,7 @@ var activeTableTab = "activeTableTab";
 <pre>default&nbsp;int&nbsp;getX()</pre>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the x-coordinate value</dd>
+<dd>the x-cell value</dd>
 </dl>
 </li>
 </ul>
@@ -201,7 +201,7 @@ var activeTableTab = "activeTableTab";
 <pre>default&nbsp;int&nbsp;getY()</pre>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the y-coordinate value</dd>
+<dd>the y-cell value</dd>
 </dl>
 </li>
 </ul>
@@ -211,16 +211,16 @@ var activeTableTab = "activeTableTab";
 <ul class="blockList">
 <li class="blockList">
 <h4>distanceTo</h4>
-<pre>default&nbsp;int&nbsp;distanceTo(<a href="../../gettysburg/common/Coordinate.html" title="interface in gettysburg.common">Coordinate</a>&nbsp;coordinate)</pre>
-<div class="block">Return the distance to the specified coordinate from this coordinate. This
+<pre>default&nbsp;int&nbsp;distanceTo(<a href="../../gettysburg/common/Coordinate.html" title="interface in gettysburg.common">Coordinate</a>&nbsp;cell)</pre>
+<div class="block">Return the distance to the specified cell from this cell. This
  is the shortest distance calculated by a possible combination of moves in
  horizontal, vertical, and diagonal steps; each of these steps counting as a
  distance of 1.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>coordinate</code> - the target coordinate</dd>
+<dd><code>cell</code> - the target cell</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the distance to the target coordinate</dd>
+<dd>the distance to the target cell</dd>
 </dl>
 </li>
 </ul>
@@ -230,13 +230,13 @@ var activeTableTab = "activeTableTab";
 <ul class="blockList">
 <li class="blockList">
 <h4>directionTo</h4>
-<pre>default&nbsp;<a href="../../gettysburg/common/Direction.html" title="enum in gettysburg.common">Direction</a>&nbsp;directionTo(<a href="../../gettysburg/common/Coordinate.html" title="interface in gettysburg.common">Coordinate</a>&nbsp;coordinate)</pre>
-<div class="block">Given a target coordinate, return the direction of that coordinate relative
- to this coordinate. If the two coordinates do not lie in a straight line, or
- are the same coordinate, the result is NONE.</div>
+<pre>default&nbsp;<a href="../../gettysburg/common/Direction.html" title="enum in gettysburg.common">Direction</a>&nbsp;directionTo(<a href="../../gettysburg/common/Coordinate.html" title="interface in gettysburg.common">Coordinate</a>&nbsp;cell)</pre>
+<div class="block">Given a target cell, return the direction of that cell relative
+ to this cell. If the two coordinates do not lie in a straight line, or
+ are the same cell, the result is NONE.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>coordinate</code> - the coordinate of the other coordinate relative to this</dd>
+<dd><code>cell</code> - the cell of the other cell relative to this</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the direction</dd>
 </dl>

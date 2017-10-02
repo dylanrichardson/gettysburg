@@ -13,7 +13,8 @@ package student.gettysburg.engine.common;
 
 import gettysburg.common.*;
 
-import static student.gettysburg.engine.common.Coordinate.makeCoordinate;
+import static student.gettysburg.engine.common.Cell.makeCell;
+import static student.gettysburg.engine.common.Unit.makeUnit;
 
 /**
  * Test implementation of the Gettysburg game.
@@ -33,8 +34,8 @@ public class TestGame extends Game implements TestGbgGame {
 	 * @see gettysburg.common.TestGbgGame#putUnitAt(gettysburg.common.GbgUnit, int, int, gettysburg.common.Direction)
 	 */
 	@Override
-	public void putUnitAt(GbgUnit unit, int x, int y, Direction facing) {
-		board.placeUnit(unit, makeCoordinate(x, y));
+	public void putUnitAt(GbgUnit unit, int x, int y, gettysburg.common.Direction facing) {
+		board.moveUnit(makeUnit(unit), makeCell(x, y));
 		board.getUnit(unit).setFacing(facing);
 	}
 

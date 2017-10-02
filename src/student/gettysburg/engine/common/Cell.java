@@ -11,23 +11,22 @@
  *******************************************************************************/
 package student.gettysburg.engine.common;
 
-import gettysburg.common.Direction;
+import gettysburg.common.Coordinate;
 import gettysburg.common.GbgBoard;
 import gettysburg.common.exceptions.GbgInvalidCoordinateException;
 
 import static gettysburg.common.Direction.*;
-import static java.lang.Math.pow;
-import static java.lang.Math.sqrt;
+import static java.lang.Math.*;
 
 /**
  * Implementation of the gettysburg.common.Coordinate interface. Additional methods
  * used in this implementation are added to this class. Clients should <em>ONLY</em>
- * use the public Coordinate interface. Additional methods
+ * use the public Cell interface. Additional methods
  * are only for engine internal use.
  * 
  * @version Jun 9, 2017
  */
-public class Coordinate implements gettysburg.common.Coordinate
+public class Cell implements Coordinate
 {
 	private final int x, y;
 	
@@ -36,8 +35,7 @@ public class Coordinate implements gettysburg.common.Coordinate
 	 * @param x
 	 * @param y
 	 */
-	private Coordinate(int x, int y)
-	{
+	Cell(int x, int y) {
 		this.x = x;
 		this.y = y;
 	}
@@ -45,24 +43,22 @@ public class Coordinate implements gettysburg.common.Coordinate
 	/**
 	 * Needed for JSON processing.
 	 */
-	public Coordinate()
+	public Cell()
 	{
 		x = y = 0;
 	}
 	
 	/**
-	 * Factory method for creating Coordinates.
+	 * Factory method for creating Cells.
 	 * @param x
 	 * @param y
 	 * @return
 	 */
-	public static Coordinate makeCoordinate(int x, int y)
-	{
+	public static Cell makeCell(int x, int y) {
 		if (x < 1 || x > GbgBoard.COLUMNS || y < 1 || y > GbgBoard.ROWS) {
-			throw new GbgInvalidCoordinateException(
-					"Coordinates for (" + x + ", " + y + ") are out of bounds.");
+			throw new GbgInvalidCoordinateException("Coordinates for (" + x + ", " + y + ") are out of bounds.");
 		}
-		return new Coordinate(x, y);
+		return new Cell(x, y);
 	}
 
 	/**
@@ -70,16 +66,16 @@ public class Coordinate implements gettysburg.common.Coordinate
 	 * @param coordinate
 	 * @return
 	 */
-	public static Coordinate makeCoordinate(gettysburg.common.Coordinate coordinate)
+	public static Cell makeCell(Coordinate coordinate)
 	{
-		return makeCoordinate(coordinate.getX(), coordinate.getY());
+		return makeCell(coordinate.getX(), coordinate.getY());
 	}
 	
 	/*
-	 * @see gettysburg.common.Coordinate#directionTo(gettysburg.common.Coordinate)
+	 * @see gettysburg.common.Cell#directionTo(gettysburg.common.Cell)
 	 */
 	@Override
-	public Direction directionTo(gettysburg.common.Coordinate coordinate) {
+	public gettysburg.common.Direction directionTo(Coordinate coordinate) {
 		if (coordinate.getX() > x) {
 			if (coordinate.getY() < y) {
 				return NORTHEAST;
@@ -106,15 +102,15 @@ public class Coordinate implements gettysburg.common.Coordinate
 	}
 
 	/*
-	 * @see gettysburg.common.Coordinate#distanceTo(gettysburg.common.Coordinate)
+	 * @see gettysburg.common.Cell#distanceTo(gettysburg.common.Cell)
 	 */
 	@Override
-	public int distanceTo(gettysburg.common.Coordinate coordinate) {
-		return (int) sqrt(pow(coordinate.getX() - x, 2) + pow(coordinate.getY() - y, 2));
+	public int distanceTo(Coordinate coordinate) {
+		return max(abs(x - coordinate.getX()), abs(y - coordinate.getY()));
 	}
 
 	/*
-	 * @see gettysburg.common.Coordinate#getX()
+	 * @see gettysburg.common.Cell#getX()
 	 */
 	@Override
 	public int getX() {
@@ -122,7 +118,7 @@ public class Coordinate implements gettysburg.common.Coordinate
 	}
 
 	/*
-	 * @see gettysburg.common.Coordinate#getY()
+	 * @see gettysburg.common.Cell#getY()
 	 */
 	@Override
 	public int getY() {
@@ -134,8 +130,7 @@ public class Coordinate implements gettysburg.common.Coordinate
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
-	public int hashCode()
-	{
+	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + x;
@@ -144,35 +139,32 @@ public class Coordinate implements gettysburg.common.Coordinate
 	}
 
 	/*
-	 * We do not compare a Coordinate to any object that just implements
-	 * the Coordinate interface.
+	 * We do not compare a Cell to any object that just implements
+	 * the Cell interface.
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
-	public boolean equals(Object obj)
-	{
+	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
 		}
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof Coordinate)) {
+		if (!(obj instanceof Cell)) {
 			return false;
 		}
-		Coordinate other = (Coordinate) obj;
-		if (x != other.x) {
-			return false;
-		}
-		if (y != other.y) {
-			return false;
-		}
-		return true;
+		Cell other = (Cell) obj;
+		return x == other.x && y == other.y;
 	}
 
 	@Override
 	public String toString()
 	{
 		return"(" + x + ", " + y + ")";
+	}
+
+	Cell getAdjacent(Direction direction) {
+		return new Cell(x + direction.dx, y + direction.dy);
 	}
 }

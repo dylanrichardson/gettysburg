@@ -1,63 +1,53 @@
 package student.gettysburg.engine.common;
 
-import gettysburg.common.Coordinate;
+import gettysburg.common.ArmyID;
 import gettysburg.common.GbgBoard;
 import gettysburg.common.GbgUnit;
 import student.gettysburg.engine.utility.configure.UnitInitializer;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import static student.gettysburg.engine.common.Cell.makeCell;
+import static student.gettysburg.engine.common.Direction.NONE;
+import static student.gettysburg.engine.common.Unit.makeUnit;
 
 class Board implements GbgBoard {
 
-    private final Map<GbgUnit, Coordinate> unitPositions = new HashMap<>();
+    private final Map<Unit, Cell> unitPositions = new HashMap<>();
 
 
-    Collection<GbgUnit> getUnitsAt(Coordinate coordinate) {
-        return unitPositions
-                .entrySet()
-                .stream()
-                .filter(entry -> isUnitAtCoordinate(entry, coordinate))
-                .map(Map.Entry::getKey)
+    Collection<GbgUnit> getUnitsAt(Cell cell) {
+        return getUnitsInCell(cell)
                 .collect(Collectors.toList());
     }
 
-    private Boolean isUnitAtCoordinate(Map.Entry<GbgUnit, Coordinate> entry, Coordinate where) {
-        return entry.getValue().getX() == where.getX() && entry.getValue().getY() == where.getY();
+    void moveUnit(Unit unit, Cell cell) {
+        unitPositions.put(unit, cell);
     }
 
-    void moveUnit(GbgUnit unit, Coordinate coordinate) {
-        unitPositions.put(unit, coordinate);
-    }
+    Predicate<Cell> cellIsOccupied = (cell) -> !getUnitsAt(cell).isEmpty();
 
-    Boolean cellIsOccupied(Coordinate coordinate) {
-        return !getUnitsAt(coordinate).isEmpty();
-    }
-
-    GbgUnit getUnit(GbgUnit unit) {
-        Optional<GbgUnit> unitOptional = unitPositions
-                .keySet()
-                .stream()
-                .filter(u -> u.equals(unit))
+    GbgUnit getUnit(GbgUnit theUnit) {
+        Optional<GbgUnit> unitOptional = unitPositions.keySet().stream()
+                .filter(unit -> unit.equals(theUnit))
+                .map(Unit::toOriginal)
                 .findFirst();
         if (unitOptional.isPresent())
             return unitOptional.get();
-        throw new RuntimeException("Could not find unit: " + unit);
+        throw new RuntimeException("Could not find unit: " + theUnit);
     }
 
-    Coordinate getUnitPosition(GbgUnit unit) {
+    Cell getUnitPosition(Unit unit) {
         return unitPositions.get(unit);
     }
 
-    void placeUnit(GbgUnit unit, Coordinate coordinate) {
-        unitPositions.put(new Unit(unit), coordinate);
-    }
-
     void placeUnit(UnitInitializer unitInitializer) {
-        placeUnit(unitInitializer.getUnit(), unitInitializer.getWhere());
+        moveUnit(makeUnit(unitInitializer.getUnit()), makeCell(unitInitializer.getWhere()));
     }
 
     void clear() {
@@ -72,20 +62,94 @@ class Board implements GbgBoard {
         });
     }
 
-    private Collection<Coordinate> getOccupiedCells() {
-        return unitPositions.values().stream().distinct()
-                .collect(Collectors.toList());
+    Stream<GbgUnit> getUnitsInBattlePositions() {
+        return unitPositions.keySet().stream()
+                .filter(this::isUnitIsAttacking)
+                .flatMap(this::getEngagedUnits)
+                .distinct();
     }
 
-    private void removeUnitsAt(Coordinate coordinate) {
-        getUnitsAt(coordinate).forEach(this::removeUnit);
+    void removeUnits(Collection<GbgUnit> units) {
+        units.forEach(unit -> removeUnit(makeUnit(unit)));
     }
 
-    private void removeUnit(GbgUnit unit) {
+    Boolean hasPath(Unit unit, Cell destination, Integer length) {
+        return PathFinder.find(getUnitPosition(unit), destination, length, getOpenNeighbors(unit));
+    }
+
+    // private
+
+    private Stream<GbgUnit> getUnitsInCell(Cell cell) {
+        return unitPositions.entrySet().stream()
+                .filter(entry -> isUnitInCell(entry, cell))
+                .map(Map.Entry::getKey);
+    }
+
+    private Boolean isUnitInCell(Map.Entry<Unit, Cell> entry, Cell cell) {
+        return entry.getValue().equals(cell);
+    }
+
+    private Collection<Cell> getOccupiedCells() {
+        return unitPositions.values().stream().distinct().collect(Collectors.toList());
+    }
+
+    private void removeUnitsAt(Cell cell) {
+        getUnitsAt(cell).forEach(unit -> removeUnit((Unit) unit));
+    }
+
+    private void removeUnit(Unit unit) {
         unitPositions.remove(unit);
     }
 
-    private Boolean cellHasStackedUnits(Coordinate coordinate) {
-        return getUnitsAt(coordinate).size() > 1;
+    private Boolean cellHasStackedUnits(Cell cell) {
+        return getUnitsAt(cell).size() > 1;
+    }
+
+    private Stream<GbgUnit> getEngagedUnits(Unit unit) {
+        return Stream.concat(
+                Stream.of(unit),
+                getZoneOfControl(unit).flatMap(this::getUnitsInCell));
+    }
+
+    private Boolean isUnitIsAttacking(Unit unit) {
+        return getZoneOfControl(unit).anyMatch(cell -> cellIsOccupiedBy(cell, unit.getEnemy()));
+    }
+
+    private Boolean cellIsOccupiedBy(Cell cell, ArmyID armyID) {
+        Optional<GbgUnit> unit = getUnitsAt(cell).stream().findFirst();
+        return unit.isPresent() && unit.get().getArmy() == armyID && cellIsOccupied.test(cell);
+    }
+
+    Stream<Cell> getZoneOfControl(Unit unit) {
+        Direction direction = unit.getDirection();
+        Cell cell = getUnitPosition(unit);
+        return IntStream.range(-1, 2)
+                .mapToObj(direction::rotate)
+                .map(cell::getAdjacent);
+    }
+
+    Function<Cell, Collection<Cell>> getOpenNeighbors(Unit unit) {
+        return (cell) -> Direction.all()
+                .map(cell::getAdjacent)
+                .filter(isControlledByArmy(unit.getEnemy()).negate())
+                .collect(Collectors.toList());
+    }
+
+    // within any of army's units' zone of control
+    Predicate<Cell> isControlledByArmy(ArmyID armyID) {
+        // check each direction
+        return (cell) -> Stream.concat(Direction.all(), Stream.of(NONE)).anyMatch(direction ->
+                // check neighboring friendly units if in control
+                getUnitsAt(cell.getAdjacent(direction))
+                        .stream()
+                        .filter(unit -> unit.getArmy() == armyID)
+                        .map(Unit::makeUnit)
+                        .anyMatch(isControlledByUnit(cell)));
+    }
+
+    Predicate<Unit> isControlledByUnit(Cell theCell) {
+        // check if in cell or cell is in zone of control
+        return unit -> getUnitPosition(unit).equals(theCell)
+                || getZoneOfControl(unit).filter(cell -> cell.equals(theCell)).count() > 0;
     }
 }

@@ -12,21 +12,25 @@
 package student.gettysburg.engine.common;
 
 import gettysburg.common.*;
+import gettysburg.common.Direction;
 import gettysburg.common.exceptions.GbgInvalidActionException;
 import gettysburg.common.exceptions.GbgInvalidMoveException;
 
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static gettysburg.common.ArmyID.CONFEDERATE;
 import static gettysburg.common.ArmyID.UNION;
 import static gettysburg.common.GbgGameStatus.IN_PROGRESS;
 import static gettysburg.common.GbgGameStatus.UNION_WINS;
 import static gettysburg.common.GbgGameStep.*;
-import static java.util.Arrays.asList;
-import static student.gettysburg.engine.common.Coordinate.makeCoordinate;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static student.gettysburg.engine.common.Battle.makeBattle;
+import static student.gettysburg.engine.common.Cell.makeCell;
 import static student.gettysburg.engine.common.Reinforcements.makeReinforcements;
+import static student.gettysburg.engine.common.Resolution.makeResolution;
 import static student.gettysburg.engine.common.Unit.makeUnit;
 import static student.gettysburg.engine.utility.configure.BattleOrder.getBattleOrder;
 
@@ -49,18 +53,20 @@ public class Game implements GbgGame {
 	Integer currentTurn = 1;
 	GbgGameStep currentStep = UMOVE; // the step before first (UMOVE)
 	Board board = new Board();
-
+	private Set<GbgUnit> movedUnits = new HashSet<>();
+	private Set<GbgUnit> rotatedUnits = new HashSet<>();
+	private Set<GbgUnit> battledUnits = new HashSet<>();
 
 	public Game() {
 		placeReinforcements(UNION, 0);
 		placeReinforcements(CONFEDERATE, 0);
 	}
 
-	/*
-	 * @see gettysburg.common.GbgGame#endStep()
-	 */
 	@Override
 	public GbgGameStep endStep() {
+		if (isBattleStep(currentStep) && !getBattlesToResolve().isEmpty())
+			throw new GbgInvalidActionException("Must resolve all battles before ending step");
+
 		board.removeStackedUnits();
 
 		if (isLastStepInTurn(currentStep))
@@ -74,53 +80,52 @@ public class Game implements GbgGame {
 	}
 
 	@Override
-	public Collection<BattleDescriptor> getBattlesToResolve() {
-		// TODO
-		return Collections.emptyList();
+	public void moveUnit(GbgUnit unit, Coordinate from, Coordinate to) {
+		validateMove(unit, from, to);
+		board.moveUnit(makeUnit(unit), makeCell(to));
+		movedUnits.add(unit);
 	}
 
 	@Override
-	public BattleResolution resolveBattle(BattleDescriptor battle) {
-		return null;
+	public void setUnitFacing(GbgUnit unit, Direction direction) {
+		validateRotation(unit);
+		board.getUnit(unit).setFacing(direction);
+		rotatedUnits.add(unit);
 	}
 
-	/*
-	 * @see gettysburg.common.GbgGame#getUnitFacing(int)
-	 */
+	@Override
+	public Collection<BattleDescriptor> getBattlesToResolve() {
+		// get units who need to battle still and split by army
+		Map<Boolean, List<GbgUnit>> unitMap = board
+				.getUnitsInBattlePositions()
+				.filter(hasBattled.negate())
+				.collect(Collectors.groupingBy(this::isTurnToAttack, Collectors.toList()));
+		if (unitMap.isEmpty())
+			return emptyList();
+		return singletonList(makeBattle(unitMap.get(true), unitMap.get(false)));
+	}
+
+	@Override
+	public BattleResolution resolveBattle(BattleDescriptor battleDescriptor) {
+		battledUnits.addAll(battleDescriptor.getAttackers());
+		battledUnits.addAll(battleDescriptor.getDefenders());
+		Resolution resolution = makeResolution(battleDescriptor);
+		board.removeUnits(resolution.getEliminatedUnionUnits());
+		board.removeUnits(resolution.getEliminatedConfederateUnits());
+		return resolution;
+	}
+
 	@Override
 	public Direction getUnitFacing(GbgUnit unit) {
 		return board.getUnit(unit).getFacing();
 	}
 
-	/*
-	 * @see gettysburg.common.GbgGame#getUnitsAt(gettysburg.common.Coordinate)
-	 */
 	@Override
-	public Collection<GbgUnit> getUnitsAt(gettysburg.common.Coordinate coordinate) {
-		Collection<GbgUnit> units = board.getUnitsAt(coordinate);
+	public Collection<GbgUnit> getUnitsAt(Coordinate coordinate) {
+		Collection<GbgUnit> units = board.getUnitsAt(makeCell(coordinate));
 		if (units.isEmpty())
 			return null;
 		return units;
-	}
-
-	/*
-	 * @see gettysburg.common.GbgGame#moveUnit(gettysburg.common.GbgUnit, gettysburg.common.Coordinate, gettysburg.common.Coordinate)
-	 */
-	@Override
-	public void moveUnit(GbgUnit unit, gettysburg.common.Coordinate from, gettysburg.common.Coordinate to) {
-		validateMove(unit, from, to);
-		board.moveUnit(unit, to);
-	}
-
-	/*
-	 * @see gettysburg.common.GbgGame#setUnitFacing(gettysburg.common.GbgUnit, gettysburg.common.Direction)
-	 */
-	@Override
-	public void setUnitFacing(GbgUnit unit, Direction direction) {
-		if (isAbleToMove(unit))
-			board.getUnit(unit).setFacing(direction);
-		else
-			throw new GbgInvalidActionException("Tried to turn " + unit + " when " + currentStep);
 	}
 
 	@Override
@@ -128,69 +133,62 @@ public class Game implements GbgGame {
 		return board.getUnit(makeUnit(armyID, leader));
 	}
 
-	/*
-	 * @see gettysburg.common.GbgGame#whereIsUnit(gettysburg.common.GbgUnit)
-	 */
 	@Override
-	public gettysburg.common.Coordinate whereIsUnit(GbgUnit unit) {
-		return board.getUnitPosition(unit);
+	public Coordinate whereIsUnit(GbgUnit unit) {
+		return board.getUnitPosition(makeUnit(unit));
 	}
 
-	/*
-	 * @see gettysburg.common.GbgGame#whereIsUnit(java.lang.String, gettysburg.common.ArmyID)
-	 */
 	@Override
-	public gettysburg.common.Coordinate whereIsUnit(String leader, ArmyID army)
+	public Coordinate whereIsUnit(String leader, ArmyID army)
 	{
 		return whereIsUnit(makeUnit(army, 0, null, leader, 0, null, null));
 	}
 
-	/*
-	 * @see gettysburg.common.GbgGame#getCurrentStep()
-	 */
 	@Override
 	public GbgGameStep getCurrentStep() {
 		return currentStep;
 	}
 
-	/*
-	 * @see gettysburg.common.GbgGame#getGameStatus()
-	 */
 	@Override
 	public GbgGameStatus getGameStatus() {
 		return gameStatus;
 	}
 
-	/*
-	 * @see gettysburg.common.GbgGame#getGameDate()
-	 */
 	@Override
 	public Calendar getGameDate() {
 		return gameDate;
 	}
 
-	/*
-	 * @see gettysburg.common.GbgGame#getTurnNumber()
-	 */
 	@Override
 	public int getTurnNumber() {
 		return currentTurn;
 	}
 
+	// private
 
-
-	private void validateMove(GbgUnit unit, gettysburg.common.Coordinate fromCoord, gettysburg.common.Coordinate toCoord) {
-		Coordinate from = makeCoordinate(fromCoord);
-		Coordinate to = makeCoordinate(toCoord);
-		if (!isAbleToMove(unit))
-			throw new GbgInvalidActionException("Tried to move " + unit + " when " + currentStep);
+	private void validateMove(GbgUnit unit, Coordinate fromCoord, Coordinate toCoord) {
+		Cell from = makeCell(fromCoord);
+		Cell to = makeCell(toCoord);
+		if (!isTurnToMove(unit))
+			throw new GbgInvalidMoveException("Tried to move " + unit + " when " + currentStep);
+		if (hasMoved.test(unit))
+			throw new GbgInvalidMoveException("Tried to move " + unit + " twice in turn");
 		if (!from.equals(whereIsUnit(unit)))
 			throw new GbgInvalidMoveException("Invalid FROM coordinate");
 		Integer distance = from.distanceTo(to);
 		if (distance > unit.getMovementFactor())
 			throw new GbgInvalidMoveException("Tried to move " + unit + " " + distance + " squares");
-		if (board.cellIsOccupied(to))
+		if (board.cellIsOccupied.test(to))
 			throw new GbgInvalidMoveException("Tried to move " + unit + " to occupied square");
+		if (!board.hasPath(makeUnit(unit), to, unit.getMovementFactor()))
+			throw new GbgInvalidMoveException("Could not find a valid path to destination");
+	}
+
+	private void validateRotation(GbgUnit unit) {
+		if (!isTurnToMove(unit))
+			throw new GbgInvalidMoveException("Tried to turn " + unit + " when " + currentStep);
+		if (hasRotated.test(unit))
+			throw new GbgInvalidMoveException("Tried to rotate " + unit + " twice in turn");
 	}
 
 	private void placeReinforcements() {
@@ -204,6 +202,13 @@ public class Game implements GbgGame {
 	}
 
 	private void endTurn() {
+		movedUnits.clear();
+		rotatedUnits.clear();
+		battledUnits.clear();
+		incrementTurn();
+	}
+
+	private void incrementTurn() {
 		Integer nextTurn = getNextTurn(currentTurn);
 		if (isLastTurnInGame(nextTurn))
 			endGame();
@@ -244,6 +249,10 @@ public class Game implements GbgGame {
 		return step == UMOVE || step == CMOVE;
 	}
 
+	private Boolean isBattleStep(GbgGameStep step) {
+		return !isMoveStep(step);
+	}
+
 	private GbgGameStep getNextStep(GbgGameStep step) {
 		switch (step) {
 			case UMOVE:
@@ -259,8 +268,19 @@ public class Game implements GbgGame {
 		}
 	}
 
-	private Boolean isAbleToMove(GbgUnit unit) {
+	private Predicate<GbgUnit> hasMoved = (unit) -> movedUnits.contains(unit);
+
+	private Predicate<GbgUnit> hasRotated = (unit) -> rotatedUnits.contains(unit);
+
+	private Predicate<GbgUnit> hasBattled = (unit) -> battledUnits.contains(unit);
+
+	private Boolean isTurnToMove(GbgUnit unit) {
 		GbgGameStep move = (unit.getArmy() == UNION) ? UMOVE : CMOVE;
+		return currentStep == move;
+	}
+
+	private Boolean isTurnToAttack(GbgUnit unit) {
+		GbgGameStep move = (unit.getArmy() == UNION) ? UBATTLE : CBATTLE;
 		return currentStep == move;
 	}
 }

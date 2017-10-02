@@ -1,12 +1,13 @@
 package student.gettysburg.engine;
 
 import gettysburg.common.*;
+import gettysburg.common.exceptions.GbgInvalidMoveException;
 import org.junit.Before;
 import org.junit.Test;
 
 import static gettysburg.common.ArmyID.CONFEDERATE;
 import static gettysburg.common.ArmyID.UNION;
-import static gettysburg.common.Direction.SOUTH;
+import static gettysburg.common.Direction.*;
 import static gettysburg.common.GbgGameStatus.IN_PROGRESS;
 import static gettysburg.common.GbgGameStep.*;
 import static org.junit.Assert.*;
@@ -167,6 +168,123 @@ public class GettysburgFactoryTest {
         assertEquals(BattleResult.DELIM, game.resolveBattle(battle).getBattleResult());
     }
 
+    @Test
+    public void hethMovesWest()
+    {
+        game.endStep();
+        game.endStep();
+        game.moveUnit(heth,  makeCoordinate(8, 8), makeCoordinate(9, 8));
+        assertEquals(heth, game.getUnitsAt(makeCoordinate(9, 8)).iterator().next());
+    }
+
+    @Test
+    public void devinMovesNorthEast()
+    {
+        game.moveUnit(devin,  makeCoordinate(13, 9), makeCoordinate(16, 6));
+        assertEquals(makeCoordinate(16, 6), game.whereIsUnit(devin));
+    }
+
+    @Test
+    public void devinMovesSouthWest()
+    {
+        game.moveUnit(devin,  makeCoordinate(13, 9), makeCoordinate(9, 13));
+        assertEquals(makeCoordinate(9, 13), game.whereIsUnit(devin));
+    }
+
+    @Test
+    public void gambleMovesSouthEast()
+    {
+        game.moveUnit(gamble, makeCoordinate(11, 11), makeCoordinate(13, 12));
+        assertEquals(makeCoordinate(13, 12), game.whereIsUnit(gamble));
+    }
+
+    @Test
+    public void gambleMovesNorthWest()
+    {
+        game.moveUnit(gamble, makeCoordinate(11, 11), makeCoordinate(12, 10));
+        assertEquals(makeCoordinate(12, 10), game.whereIsUnit(gamble));
+    }
+
+    @Test
+    public void hethMovesAnL()
+    {
+        game.endStep();
+        game.endStep();
+        game.moveUnit(heth,  makeCoordinate(8, 8), makeCoordinate(9, 6));
+        assertEquals(heth, game.getUnitsAt(makeCoordinate(9, 6)).iterator().next());
+    }
+
+    @Test(expected=GbgInvalidMoveException.class)
+    public void attemptToMoveTooFar()
+    {
+        game.moveUnit(devin, makeCoordinate(13, 9), makeCoordinate(18, 9));
+    }
+
+    @Test(expected=GbgInvalidMoveException.class)
+    public void attemptToMoveOntoAnotherUnit()
+    {
+        game.moveUnit(gamble, makeCoordinate(11, 11), makeCoordinate(13, 9));
+    }
+
+    @Test(expected=GbgInvalidMoveException.class)
+    public void attemptToMoveFromEmptySquare()
+    {
+        game.moveUnit(gamble,  makeCoordinate(10, 10), makeCoordinate(10, 9));
+    }
+
+    @Test(expected=GbgInvalidMoveException.class)
+    public void attemptToMoveWrongArmyUnit() {
+        game.moveUnit(heth, makeCoordinate(8, 8), makeCoordinate(9, 6));
+    }
+
+    @Test(expected=GbgInvalidMoveException.class)
+    public void attemptToMoveUnitTwiceInOneTurn() {
+        game.moveUnit(gamble, makeCoordinate(11, 11), makeCoordinate(12, 10));
+        game.moveUnit(gamble, makeCoordinate(12, 10), makeCoordinate(12, 11));
+    }
+
+    // Facing tests
+    @Test
+    public void gambleFacesNorth()
+    {
+        game.setUnitFacing(gamble, NORTH);
+        assertEquals(NORTH, game.getUnitFacing(gamble));
+    }
+
+    @Test
+    public void devinFacesSoutheastAfterMoving()
+    {
+        game.moveUnit(devin, makeCoordinate(13, 9), makeCoordinate(13, 10));
+        game.setUnitFacing(devin, SOUTHEAST);
+        assertEquals(SOUTHEAST, game.getUnitFacing(devin));
+    }
+
+    @Test(expected=GbgInvalidMoveException.class)
+    public void hethAttemptsFacingChangeAtWrongTime() {
+        game.setUnitFacing(heth, WEST);
+    }
+
+    @Test(expected=GbgInvalidMoveException.class)
+    public void devinTriesToSetFacingTwice()
+    {
+        game.setUnitFacing(devin, NORTHWEST);
+        game.moveUnit(devin, makeCoordinate(13, 9), makeCoordinate(13, 10));
+        game.setUnitFacing(devin, SOUTHEAST);
+    }
+
+    // Other tests
+    @Test(expected=Exception.class)
+    public void queryInvalidSquare()
+    {
+        game.getUnitsAt(makeCoordinate(30, 30));
+    }
+
+    @Test(expected=GbgInvalidMoveException.class)
+    public void moveToStartingSquare() {
+        game.moveUnit(gamble, makeCoordinate(11, 11), makeCoordinate(11, 11));
+    }
+
+
     class TestCoordinate implements Coordinate {
         private int x, y;
 
@@ -183,5 +301,4 @@ public class GettysburgFactoryTest {
             this.y = y;
         }
     }
-
 }

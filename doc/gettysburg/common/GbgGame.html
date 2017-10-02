@@ -328,11 +328,11 @@ var activeTableTab = "activeTableTab";
 <pre>default&nbsp;java.util.Collection&lt;<a href="../../gettysburg/common/GbgUnit.html" title="interface in gettysburg.common">GbgUnit</a>&gt;&nbsp;getUnitsAt(<a href="../../gettysburg/common/Coordinate.html" title="interface in gettysburg.common">Coordinate</a>&nbsp;where)</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>where</code> - the coordinate of the square being queried</dd>
+<dd><code>where</code> - the cell of the square being queried</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the units on the square corresponding to the coordinate or null if there are none</dd>
+<dd>the units on the square corresponding to the cell or null if there are none</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>GbgInvalidCoordinateException</code> - if the coordinate is not valid for the board</dd>
+<dd><code>GbgInvalidCoordinateException</code> - if the cell is not valid for the board</dd>
 </dl>
 </li>
 </ul>
@@ -345,11 +345,11 @@ var activeTableTab = "activeTableTab";
 <pre>default&nbsp;<a href="../../gettysburg/common/GbgSquareDescriptor.html" title="interface in gettysburg.common">GbgSquareDescriptor</a>&nbsp;getSquareDescriptor(<a href="../../gettysburg/common/Coordinate.html" title="interface in gettysburg.common">Coordinate</a>&nbsp;where)</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>where</code> - the coordinate of the square being queried</dd>
+<dd><code>where</code> - the cell of the square being queried</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the SquareDescriptor object that corresponds to this location</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>GbgInvalidCoordinateException</code> - if the coordinate is not valid for the board</dd>
+<dd><code>GbgInvalidCoordinateException</code> - if the cell is not valid for the board</dd>
 </dl>
 </li>
 </ul>
@@ -436,7 +436,7 @@ var activeTableTab = "activeTableTab";
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>unit</code> - the unit we are querying</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the coordinate of the square where the current unit is on the board or null
+<dd>the cell of the square where the current unit is on the board or null
  if the unit is not on the board</dd>
 </dl>
 </li>
@@ -454,7 +454,7 @@ var activeTableTab = "activeTableTab";
 <dd><code>leader</code> - the unit leader</dd>
 <dd><code>army</code> - the unit's army</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the coordinate of the square where the current unit is on the board or null
+<dd>the cell of the square where the current unit is on the board or null
  if the unit is not on the board</dd>
 </dl>
 </li>

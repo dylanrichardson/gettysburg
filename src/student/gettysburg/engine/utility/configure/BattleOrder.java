@@ -120,24 +120,21 @@ public class BattleOrder {
 	
 	private static UnitInitializer mui(int turn, int x, int y, ArmyID id, int combatFactor, 
 			Direction facing, String leader, int movementFactor,
-			UnitSize unitSize, UnitType unitType)
-	{
+			UnitSize unitSize, UnitType unitType) {
 		return new UnitInitializer(turn, x, y, id, combatFactor, facing, leader, movementFactor,
 				unitSize, unitType);
 	}
 	
 	private static UnitInitializer mcu(int turn, int x, int y, int combatFactor, 
 			Direction facing, String leader, int movementFactor,
-			UnitSize unitSize, UnitType unitType)
-	{
+			UnitSize unitSize, UnitType unitType) {
 		return mui(turn, x, y, CONFEDERATE, combatFactor, facing, leader, movementFactor,
 				unitSize, unitType);
 	}
 	
 	private static UnitInitializer muu(int turn, int x, int y, int combatFactor, 
 			Direction facing, String leader, int movementFactor,
-			UnitSize unitSize, UnitType unitType)
-	{
+			UnitSize unitSize, UnitType unitType) {
 		return mui(turn, x, y, UNION, combatFactor, facing, leader, movementFactor,
 				unitSize, unitType);
 	}

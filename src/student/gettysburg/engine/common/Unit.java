@@ -11,7 +11,14 @@
  *******************************************************************************/
 package student.gettysburg.engine.common;
 
-import gettysburg.common.*;
+import gettysburg.common.ArmyID;
+import gettysburg.common.GbgUnit;
+import gettysburg.common.UnitSize;
+import gettysburg.common.UnitType;
+
+import static gettysburg.common.ArmyID.CONFEDERATE;
+import static gettysburg.common.ArmyID.UNION;
+import static student.gettysburg.engine.common.Direction.NONE;
 
 /**
  * An implementation of the GbgUnit interface. This is basically a data structure
@@ -36,26 +43,37 @@ public class Unit implements GbgUnit {
 	 * a unit directly, use the factory method.
 	 */
 	public Unit() {
-		armyID = null;
-		combatFactor = 0;
-		facing = null;
-		leader = null;
-		movementFactor = 0;
-		unitSize = null;
-		unitType = null;
+		this(null, null);
+	}
+
+	private Unit(ArmyID armyID, String leader) {
+		this(armyID, 0, NONE, leader, 0, null, null);
+	}
+
+	private Unit(ArmyID armyID, int combatFactor, Direction facing,
+				 String leader, int movementFactor, UnitSize unitSize, UnitType unitType) {
+		this.armyID = armyID;
+		this.combatFactor = combatFactor;
+		this.facing = facing;
+		this.leader = leader;
+		this.movementFactor = movementFactor;
+		this.unitSize = unitSize;
+		this.unitType = unitType;
 	}
 
 	/**
-	 * Copy constructor.
+	 * Copy creation method.
 	 */
-	public Unit(GbgUnit unit) {
-		armyID = unit.getArmy();
-		combatFactor = unit.getCombatFactor();
-		facing = unit.getFacing();
-		leader = unit.getLeader();
-		movementFactor = unit.getMovementFactor();
-		unitSize = unit.getSize();
-		unitType = unit.getType();
+	public static Unit makeUnit(GbgUnit unit) {
+		return makeUnit(
+				unit.getArmy(),
+				unit.getCombatFactor(),
+				unit.getFacing(),
+				unit.getLeader(),
+				unit.getMovementFactor(),
+				unit.getSize(),
+				unit.getType()
+		);
 	}
 	
 	/**
@@ -69,23 +87,15 @@ public class Unit implements GbgUnit {
 	 * @param unitType
 	 * @return the unitImpl
 	 */
-	public static GbgUnit makeUnit(ArmyID armyID, int combatFactor, Direction facing, 
+	public static Unit makeUnit(ArmyID armyID, int combatFactor, gettysburg.common.Direction facing,
 			String leader, int movementFactor, UnitSize unitSize, UnitType unitType) {
-		final Unit unit = new Unit();
-		unit.armyID = armyID;
-		unit.combatFactor = combatFactor;
-		unit.facing = facing;
-		unit.leader = leader;
-		unit.movementFactor = movementFactor;
-		unit.unitSize = unitSize;
-		unit.unitType = unitType;
-		return unit;
+		return new Unit(armyID, combatFactor, Direction.fromOriginal(facing), leader, movementFactor, unitSize, unitType);
 	}
 
-	static GbgUnit makeUnit(ArmyID armyID, String leader) {
-		return makeUnit(armyID, 0, null, leader, 0, null, null);
+	static Unit makeUnit(ArmyID armyID, String leader) {
+		return new Unit(armyID, leader);
 	}
-	
+
 	/*
 	 * @see gettysburg.common.GbgUnit#getArmy()
 	 */
@@ -99,8 +109,7 @@ public class Unit implements GbgUnit {
 	 * @see gettysburg.common.GbgUnit#getCombatFactor()
 	 */
 	@Override
-	public int getCombatFactor()
-	{
+	public int getCombatFactor() {
 		return combatFactor;
 	}
 
@@ -108,8 +117,13 @@ public class Unit implements GbgUnit {
 	 * @see gettysburg.common.GbgUnit#getFacing()
 	 */
 	@Override
-	public Direction getFacing()
-	{
+	public gettysburg.common.Direction getFacing() {
+		if (facing == null)
+			return null;
+		return facing.getOriginal();
+	}
+
+	Direction getDirection() {
 		return facing;
 	}
 
@@ -117,8 +131,8 @@ public class Unit implements GbgUnit {
 	 * @see gettysburg.common.GbgUnit#setFacing(gettysburg.common.Direction)
 	 */
 	@Override
-	public void setFacing(Direction facing) {
-		this.facing = facing;
+	public void setFacing(gettysburg.common.Direction facing) {
+		this.facing = Direction.fromOriginal(facing);
 	}
 
 	/*
@@ -155,14 +169,6 @@ public class Unit implements GbgUnit {
 	public UnitType getType()
 	{
 		return unitType;
-	}
-
-	/**
-	 * @return the armyID
-	 */
-	public ArmyID getArmyID()
-	{
-		return armyID;
 	}
 
 	/*
@@ -203,5 +209,13 @@ public class Unit implements GbgUnit {
 			return false;
 		}
 		return true;
+	}
+
+	static GbgUnit toOriginal(Unit unit) {
+		return unit;
+	}
+
+	ArmyID getEnemy() {
+		return armyID == UNION ? CONFEDERATE : UNION;
 	}
 }
