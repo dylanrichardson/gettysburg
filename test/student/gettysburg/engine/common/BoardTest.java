@@ -1,21 +1,19 @@
 package student.gettysburg.engine.common;
 
-import gettysburg.common.GbgUnit;
 import org.junit.Before;
 import org.junit.Test;
 import student.gettysburg.engine.utility.configure.UnitInitializer;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static gettysburg.common.ArmyID.CONFEDERATE;
 import static gettysburg.common.ArmyID.UNION;
-import static gettysburg.common.Direction.EAST;
-import static gettysburg.common.Direction.WEST;
+import static gettysburg.common.Direction.*;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
-import static student.gettysburg.engine.GettysburgFactory.makeCoordinate;
 import static student.gettysburg.engine.common.Cell.makeCell;
 import static student.gettysburg.engine.common.Unit.makeUnit;
 
@@ -27,6 +25,8 @@ public class BoardTest {
     public void setUp() {
         board = new Board();
     }
+
+    // getUnitsAt
 
     @Test
     public void getUnitsAtEmptyCell() {
@@ -47,6 +47,8 @@ public class BoardTest {
         assertEquals(new HashSet<>(units), new HashSet<>(board.getUnitsAt(cell)));
     }
 
+    // moveUnit
+
     @Test
     public void moveUnit() {
         Cell cellA = makeCell(5, 5);
@@ -58,6 +60,8 @@ public class BoardTest {
         assertEquals(cellB, board.getUnitPosition(unit));
     }
 
+    // cellIsOccupied
+
     @Test
     public void cellIsOccupied() {
         Cell cell = makeCell(5, 5);
@@ -65,6 +69,8 @@ public class BoardTest {
 
         assertTrue(board.cellIsOccupied.test(cell));
     }
+
+    // getUnit
 
     @Test(expected = RuntimeException.class)
     public void getUnitNotOnBoardThrowsException() {
@@ -79,6 +85,8 @@ public class BoardTest {
         assertEquals(unit, board.getUnit(unit));
     }
 
+    // getUnitPosition
+
     @Test
     public void getUnitPosition() {
         Cell cell = makeCell(5, 5);
@@ -87,6 +95,8 @@ public class BoardTest {
 
         assertEquals(cell, board.getUnitPosition(unit));
     }
+
+    // placeUnit
 
     @Test
     public void placeUnit() {
@@ -98,6 +108,8 @@ public class BoardTest {
         assertEquals(cell, board.getUnitPosition(unit));
     }
 
+    // clear
+
     @Test
     public void clear() {
         Cell cell = makeCell(5, 5);
@@ -106,6 +118,8 @@ public class BoardTest {
 
         assertTrue(board.getUnitsAt(cell).isEmpty());
     }
+
+    // removeStackedUnits
 
     @Test
     public void removeStackedUnits() {
@@ -117,6 +131,8 @@ public class BoardTest {
 
         assertTrue(board.getUnitsAt(cell).isEmpty());
     }
+
+    // getUnitsInBattlePositions
 
     @Test
     public void getUnitsInBattle1v1() {
@@ -213,10 +229,64 @@ public class BoardTest {
         assertEquals(new HashSet<>(units), new HashSet<>(board.getUnitsInBattlePositions().collect(Collectors.toList())));
     }
 
+    // getAllowedNeighborsAt
+
+    @Test
+    public void getOpenNeighborsAll() {
+        Unit unitA = makeUnit(UNION, 0, WEST, "A", 0, null, null);
+        Unit unitB = makeUnit(CONFEDERATE, 0, WEST, "B", 0, null, null);
+        Cell cell = makeCell(5, 5);
+        board.moveUnit(unitA, cell);
+        board.moveUnit(unitB, makeCell(7, 5));
+        Set<Cell> openNeighbors = new HashSet<>(asList(
+                makeCell(4, 4),
+                makeCell(4, 5),
+                makeCell(4, 6),
+                makeCell(5, 4),
+                makeCell(5, 6),
+                makeCell(6, 4),
+                makeCell(6, 5),
+                makeCell(6, 6)
+        ));
+
+        assertEquals(openNeighbors, new HashSet<>(board.getAllowedNeighborsAt(unitA).apply(cell)));
+    }
+
+    @Test
+    public void getOpenNeighborsSome() {
+        Unit unitA = makeUnit(UNION, 0, WEST, "A", 0, null, null);
+        Unit unitB = makeUnit(CONFEDERATE, 0, EAST, "B", 0, null, null);
+        Cell cell = makeCell(5, 5);
+        board.moveUnit(unitA, cell);
+        board.moveUnit(unitB, makeCell(6, 5));
+        Set<Cell> openNeighbors = new HashSet<>(asList(
+                makeCell(4, 4),
+                makeCell(4, 5),
+                makeCell(4, 6),
+                makeCell(5, 4),
+                makeCell(5, 6),
+                makeCell(6, 4),
+                makeCell(6, 6)
+        ));
+
+        assertEquals(openNeighbors, new HashSet<>(board.getAllowedNeighborsAt(unitA).apply(cell)));
+    }
+
+    @Test
+    public void getOpenNeighborsNone() {
+        Unit unitA = makeUnit(UNION, 0, WEST, "A", 0, null, null);
+        Unit unitB = makeUnit(CONFEDERATE, 0, WEST, "B", 0, null, null);
+        Cell cell = makeCell(5, 5);
+        board.moveUnit(unitA, cell);
+        board.moveUnit(unitB, makeCell(6, 5));
+
+        assertTrue(board.getAllowedNeighborsAt(unitA).apply(cell).isEmpty());
+    }
+
     // hasPath
 
     @Test
-    public void hasPathUnblocked() {
+    public void hasPathNotBlocked() {
         Integer movementFactor = 5;
         Unit unit = makeUnit(UNION, 0, EAST,"A", movementFactor, null, null);
         Cell to = makeCell(5, 10);
@@ -227,17 +297,46 @@ public class BoardTest {
     }
 
     @Test
-    public void hasPathBlocked() {
+    public void hasPathNotBlocked2() {
         Integer movementFactor = 5;
-        Unit unit = makeUnit(UNION, 0, EAST,"A", movementFactor, null, null);
-        Cell to = makeCell(5, 10);
-        Cell from = makeCell(5, 5);
-        board.moveUnit(unit, from);
-        board.moveUnit(makeUnit(CONFEDERATE, "B"), makeCell(7, 4));
-        board.moveUnit(makeUnit(CONFEDERATE, "C"), makeCell(7, 7));
-        board.moveUnit(unit, from);
+        Unit unitA = makeUnit(UNION, 0, SOUTH,"A", movementFactor, null, null);
+        Unit unitB = makeUnit(CONFEDERATE, 0, SOUTH,"B", movementFactor, null, null);
+        board.moveUnit(unitA, makeCell(5, 5));
+        board.moveUnit(unitB, makeCell(5, 7));
 
-        assertFalse(board.hasPath(unit, to, movementFactor));
+        assertTrue(board.hasPath(unitA, makeCell(5, 6), movementFactor));
+    }
+
+    @Test
+    public void hasPathBlockedByEnemyZOC() {
+        Integer movementFactor = 4;
+        Unit unitA = makeUnit(UNION, "A");
+        unitA.setFacing(EAST);
+        Unit unitB = makeUnit(CONFEDERATE, "B");
+        unitB.setFacing(EAST);
+        Unit unitC = makeUnit(CONFEDERATE, "C");
+        unitC.setFacing(EAST);
+        board.moveUnit(unitA, makeCell(5, 5));
+        board.moveUnit(unitB, makeCell(7, 4));
+        board.moveUnit(unitC, makeCell(7, 7));
+
+        assertFalse(board.hasPath(unitA, makeCell(10, 5), movementFactor));
+    }
+
+    @Test
+    public void hasPathBlockedByFriendlyZOC() {
+        Integer movementFactor = 2;
+        Unit unitA = makeUnit(UNION, "A");
+        unitA.setFacing(EAST);
+        Unit unitB = makeUnit(CONFEDERATE, "B");
+        unitB.setFacing(NORTH);
+        Unit unitC = makeUnit(CONFEDERATE, "C");
+        unitC.setFacing(SOUTH);
+        board.moveUnit(unitA, makeCell(5, 5));
+        board.moveUnit(unitB, makeCell(7, 4));
+        board.moveUnit(unitC, makeCell(7, 6));
+
+        assertFalse(board.hasPath(unitA, makeCell(7, 5), movementFactor));
     }
 
     @Test
@@ -256,28 +355,45 @@ public class BoardTest {
         assertTrue(board.hasPath(unitA, to, movementFactor));
     }
 
-    // getOpenNeighbors
+    // getRetreatableSquares
 
     @Test
-    public void getNei() {
-        Unit unitA = makeUnit(UNION, "A");
-        Unit unitB = makeUnit(CONFEDERATE, 0, WEST, "C", 0, null, null);
-        Cell cell = makeCell(5, 5);
-        board.moveUnit(unitA, cell);
-        board.moveUnit(unitB, makeCell(7, 5));
+    public void getRetreatableSquaresSome() {
+        Unit unitA = makeUnit(UNION, 1, EAST, "A", 1, null, null);
+        Unit unitB = makeUnit(CONFEDERATE, 1, WEST, "B", 1, null, null);
+        board.moveUnit(unitA, makeCell(5, 5));
+        board.moveUnit(unitB, makeCell(6, 5));
 
-        assertTrue(board.isControlledByUnit(makeCell(6, 4)).test(unitB));
-        assertTrue(board.isControlledByUnit(makeCell(6, 5)).test(unitB));
-        assertTrue(board.isControlledByUnit(makeCell(6, 6)).test(unitB));
-        assertTrue(board.isControlledByUnit(makeCell(7, 5)).test(unitB));
+        Set<Cell> cells = new HashSet<>(asList(
+                makeCell(4, 4),
+                makeCell(4, 5),
+                makeCell(4, 6),
+                makeCell(6, 4),
+                makeCell(6, 6)
+        ));
+        assertEquals(cells, new HashSet<>(board.getRetreatableSquares(unitA).collect(Collectors.toList())));
+    }
 
-        assertTrue(board.isControlledByArmy(CONFEDERATE).test(makeCell(6, 5)));
-        assertTrue(board.isControlledByArmy(CONFEDERATE).test(makeCell(6, 6)));
-        assertTrue(board.isControlledByArmy(CONFEDERATE).test(makeCell(6, 4)));
-        assertTrue(board.isControlledByArmy(CONFEDERATE).test(makeCell(7, 5)));
+    @Test
+    public void getRetreatableSquaresNone() {
+        Unit unitA = makeUnit(UNION, 1, EAST, "A", 1, null, null);
+        Unit unitB = makeUnit(CONFEDERATE, 1, SOUTHEAST, "B", 1, null, null);
+        Unit unitC = makeUnit(CONFEDERATE, 1, SOUTHWEST, "C", 1, null, null);
+        Unit unitD = makeUnit(CONFEDERATE, 1, NORTH, "D", 1, null, null);
+        board.moveUnit(unitA, makeCell(5, 5));
+        board.moveUnit(unitB, makeCell(4, 4));
+        board.moveUnit(unitC, makeCell(6, 4));
+        board.moveUnit(unitD, makeCell(5, 7));
 
-        assertEquals(5, board.getOpenNeighbors(unitA).apply(cell).size());
+        assertTrue(board.getRetreatableSquares(unitA).count() == 0);
+    }
 
+    @Test
+    public void getRetreatableSquaresNoMovementFactor() {
+        Unit unitA = makeUnit(UNION, 1, EAST, "A", 0, null, null);
+        board.moveUnit(unitA, makeCell(5, 5));
+
+        assertTrue(board.getRetreatableSquares(unitA).count() == 0);
     }
 
 }

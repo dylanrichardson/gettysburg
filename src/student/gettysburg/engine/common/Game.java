@@ -19,6 +19,7 @@ import gettysburg.common.exceptions.GbgInvalidMoveException;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static gettysburg.common.ArmyID.CONFEDERATE;
 import static gettysburg.common.ArmyID.UNION;
@@ -46,16 +47,16 @@ public class Game implements GbgGame {
 
 	private static final Integer TURN_LIMIT = 49;
 
-	private final Calendar gameDate = Calendar.getInstance();
 	private GbgGameStatus gameStatus = IN_PROGRESS;
-	private Reinforcements reinforcements = makeReinforcements(getBattleOrder());
+	private final Reinforcements reinforcements = makeReinforcements(getBattleOrder());
 
 	Integer currentTurn = 1;
-	GbgGameStep currentStep = UMOVE; // the step before first (UMOVE)
-	Board board = new Board();
-	private Set<GbgUnit> movedUnits = new HashSet<>();
-	private Set<GbgUnit> rotatedUnits = new HashSet<>();
-	private Set<GbgUnit> battledUnits = new HashSet<>();
+	GbgGameStep currentStep = UMOVE;
+	final Board board = new Board();
+	private final Set<GbgUnit> movedUnits = new HashSet<>();
+	private final Set<GbgUnit> rotatedUnits = new HashSet<>();
+	private final Set<GbgUnit> battledUnits = new HashSet<>();
+	private Collection<BattleDescriptor> battlesToResolve = emptyList();
 
 	public Game() {
 		placeReinforcements(UNION, 0);
@@ -64,7 +65,7 @@ public class Game implements GbgGame {
 
 	@Override
 	public GbgGameStep endStep() {
-		if (isBattleStep(currentStep) && !getBattlesToResolve().isEmpty())
+		if (isBattleStep(currentStep) && !battlesToResolve.isEmpty())
 			throw new GbgInvalidActionException("Must resolve all battles before ending step");
 
 		board.removeStackedUnits();
@@ -73,8 +74,12 @@ public class Game implements GbgGame {
 			endTurn();
 
 		currentStep = getNextStep(currentStep);
+
 		if (isMoveStep(currentStep))
 			placeReinforcements();
+
+		if (isBattleStep(currentStep))
+			battlesToResolve = getBattlesToResolve();
 
 		return currentStep;
 	}
@@ -95,24 +100,73 @@ public class Game implements GbgGame {
 
 	@Override
 	public Collection<BattleDescriptor> getBattlesToResolve() {
-		// get units who need to battle still and split by army
-		Map<Boolean, List<GbgUnit>> unitMap = board
-				.getUnitsInBattlePositions()
+		BattleDescriptor battle = getBattleToResolve();
+		if (battle == null)
+			return emptyList();
+		return singletonList(battle);
+	}
+
+	private BattleDescriptor getBattleToResolve() {
+		// get units who need to battle still split by attackers/defenders
+		Stream<GbgUnit> units = board
+				.getUnitsInBattlePositions();
+		Map<Boolean, List<GbgUnit>> unitMap = units
 				.filter(hasBattled.negate())
 				.collect(Collectors.groupingBy(this::isTurnToAttack, Collectors.toList()));
 		if (unitMap.isEmpty())
-			return emptyList();
-		return singletonList(makeBattle(unitMap.get(true), unitMap.get(false)));
+			return null;
+		return makeBattle(unitMap.get(true), unitMap.get(false));
 	}
 
 	@Override
 	public BattleResolution resolveBattle(BattleDescriptor battleDescriptor) {
+		validatePartialBattle(battleDescriptor);
+		// track battled units
 		battledUnits.addAll(battleDescriptor.getAttackers());
 		battledUnits.addAll(battleDescriptor.getDefenders());
-		Resolution resolution = makeResolution(battleDescriptor);
+		Resolution resolution = getResolution(battleDescriptor);
+		// move retreating units
+		if (resolution.isRetreat())
+			retreatUnits(resolution.getRetreatingUnits());
+		// remove eliminated units
 		board.removeUnits(resolution.getEliminatedUnionUnits());
 		board.removeUnits(resolution.getEliminatedConfederateUnits());
 		return resolution;
+	}
+
+	Resolution getResolution(BattleDescriptor battleDescriptor) {
+		return makeResolution(battleDescriptor);
+	}
+
+	private void retreatUnits(Collection<Unit> units) {
+		units.forEach(unit -> {
+			Iterator<Cell> cell = board.getRetreatableSquares(unit).iterator();
+			if (cell.hasNext())
+				board.moveUnit(unit, cell.next());
+			else
+				board.removeUnit(unit);
+		});
+	}
+
+	private void validatePartialBattle(BattleDescriptor partialBattle) {
+		BattleDescriptor battle = getBattleToResolve();
+		if (battle == null)
+			throw invalidBattle("No battles to resolve");
+		validateBattleUnits(partialBattle.getAttackers(), battle.getAttackers(), "attack");
+		validateBattleUnits(partialBattle.getDefenders(), battle.getDefenders(), "defend");
+	}
+
+	private void validateBattleUnits(Collection<GbgUnit> unitsToValidate, Collection<GbgUnit> validUnits,
+									 String verb) {
+		unitsToValidate.forEach(unit -> {
+			if (!validUnits.contains(unit)) {
+				throw invalidBattle(unit + " cannot " + verb);
+			}
+		});
+	}
+
+	private GbgInvalidActionException invalidBattle(String msg) {
+		return new GbgInvalidActionException("Invalid battle descriptor: " + msg);
 	}
 
 	@Override
@@ -152,11 +206,6 @@ public class Game implements GbgGame {
 	@Override
 	public GbgGameStatus getGameStatus() {
 		return gameStatus;
-	}
-
-	@Override
-	public Calendar getGameDate() {
-		return gameDate;
 	}
 
 	@Override
@@ -212,7 +261,8 @@ public class Game implements GbgGame {
 		Integer nextTurn = getNextTurn(currentTurn);
 		if (isLastTurnInGame(nextTurn))
 			endGame();
-		else
+		// increment only if not game over
+		if (gameStatus == IN_PROGRESS)
 			currentTurn = nextTurn;
 	}
 
@@ -268,11 +318,11 @@ public class Game implements GbgGame {
 		}
 	}
 
-	private Predicate<GbgUnit> hasMoved = (unit) -> movedUnits.contains(unit);
+	private final Predicate<GbgUnit> hasMoved = (unit) -> movedUnits.contains(unit);
 
-	private Predicate<GbgUnit> hasRotated = (unit) -> rotatedUnits.contains(unit);
+	private final Predicate<GbgUnit> hasRotated = (unit) -> rotatedUnits.contains(unit);
 
-	private Predicate<GbgUnit> hasBattled = (unit) -> battledUnits.contains(unit);
+	private final Predicate<GbgUnit> hasBattled = (unit) -> battledUnits.contains(unit);
 
 	private Boolean isTurnToMove(GbgUnit unit) {
 		GbgGameStep move = (unit.getArmy() == UNION) ? UMOVE : CMOVE;

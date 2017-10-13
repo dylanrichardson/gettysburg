@@ -23,14 +23,12 @@ import student.gettysburg.engine.common.TestGame;
  * the Gettysburg game, including the game itself.
  * @version Jul 30, 2017
  */
-public final class GettysburgFactory
-{
+public final class GettysburgFactory {
 	/**
 	 * Creation method for a new Gettysburg game instance.
 	 * @return a new Gettysburg game
 	 */
-	public static GbgGame makeGame()
-	{
+	public static GbgGame makeGame() {
 		return new Game();
 	}
 

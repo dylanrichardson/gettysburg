@@ -22,9 +22,9 @@ import gettysburg.common.*;
  */
 public class UnitInitializer
 {
-	private int turn;
-	private Coordinate where;
-	private GbgUnit unit;
+	private final int turn;
+	private final Coordinate where;
+	private final GbgUnit unit;
 	
 	/**
 	 * Default constructor.

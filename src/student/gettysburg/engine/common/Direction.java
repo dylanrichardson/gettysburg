@@ -7,14 +7,14 @@ import java.util.stream.Stream;
 import static java.util.Arrays.asList;
 
 public enum Direction {
-    NORTH(0, 1),
-    NORTHEAST(1, 1),
+    NORTH(0, -1),
+    NORTHEAST(1, -1),
     EAST(1, 0),
-    SOUTHEAST(1, -1),
-    SOUTH(0, -1),
-    SOUTHWEST(-1, -1),
+    SOUTHEAST(1, 1),
+    SOUTH(0, 1),
+    SOUTHWEST(-1, 1),
     WEST(-1, 0),
-    NORTHWEST(-1, 1),
+    NORTHWEST(-1, -1),
     NONE(0, 0);
 
     final Integer dx;
@@ -60,15 +60,15 @@ public enum Direction {
     }
 
     Direction rotateClockwise() {
-        return rotate(1);
-    }
-
-    Direction rotateCounterClockwise() {
         return rotate(-1);
     }
 
+    Direction rotateCounterClockwise() {
+        return rotate(1);
+    }
+
     Direction rotate(Integer delta) {
-        // TODO convert to p
+        // TODO convert to degrees
         if (delta == 0) {
             return fromDelta(dx, dy);
         }
@@ -83,5 +83,9 @@ public enum Direction {
 
     private Boolean isCardinal() {
         return asList(NORTH, EAST, SOUTH, WEST).contains(this);
+    }
+
+    public static Stream<Direction> allAndNone() {
+        return Stream.concat(Direction.all(), Stream.of(NONE));
     }
 }

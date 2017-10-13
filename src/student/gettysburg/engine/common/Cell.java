@@ -43,8 +43,7 @@ public class Cell implements Coordinate
 	/**
 	 * Needed for JSON processing.
 	 */
-	public Cell()
-	{
+	public Cell() {
 		x = y = 0;
 	}
 	

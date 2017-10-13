@@ -30,13 +30,13 @@ import static student.gettysburg.engine.common.Direction.NONE;
  */
 public class Unit implements GbgUnit {
 
-	private ArmyID armyID;
-	private int combatFactor;
+	private final ArmyID armyID;
+	private final int combatFactor;
 	private Direction facing;
-	private String leader;
-	private int movementFactor;
-	private UnitSize unitSize;
-	private UnitType unitType;
+	private final String leader;
+	private final int movementFactor;
+	private final UnitSize unitSize;
+	private final UnitType unitType;
 
 	/**
 	 * Default constructor needed for JSON processing. When creating

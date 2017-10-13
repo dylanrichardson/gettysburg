@@ -13,7 +13,12 @@ package student.gettysburg.engine.common;
 
 import gettysburg.common.*;
 
+import java.util.Iterator;
+import java.util.List;
+
+import static java.util.Collections.emptyIterator;
 import static student.gettysburg.engine.common.Cell.makeCell;
+import static student.gettysburg.engine.common.Resolution.makeResolution;
 import static student.gettysburg.engine.common.Unit.makeUnit;
 
 /**
@@ -22,36 +27,38 @@ import static student.gettysburg.engine.common.Unit.makeUnit;
  */
 public class TestGame extends Game implements TestGbgGame {
 
-	/*
-	 * @see gettysburg.common.TestGbgGame#clearBoard()
-	 */
+	private Iterator<BattleResult> battleResults = emptyIterator();
+
 	@Override
 	public void clearBoard() {
 		board.clear();
 	}
 
-	/*
-	 * @see gettysburg.common.TestGbgGame#putUnitAt(gettysburg.common.GbgUnit, int, int, gettysburg.common.Direction)
-	 */
 	@Override
 	public void putUnitAt(GbgUnit unit, int x, int y, gettysburg.common.Direction facing) {
 		board.moveUnit(makeUnit(unit), makeCell(x, y));
 		board.getUnit(unit).setFacing(facing);
 	}
 
-	/*
-	 * @see gettysburg.common.TestGbgGame#setGameStep(gettysburg.common.GbgGameStep)
-	 */
 	@Override
 	public void setGameStep(GbgGameStep step) {
 		currentStep = step;
 	}
 
-	/*
-	 * @see gettysburg.common.TestGbgGame#setGameTurn(int)
-	 */
 	@Override
 	public void setGameTurn(int turn) {
 		currentTurn = turn;
+	}
+
+	@Override
+	public void setBattleResults(List<BattleResult> battleResults) {
+		this.battleResults = battleResults.iterator();
+	}
+
+	@Override
+	public Resolution getResolution(BattleDescriptor battleDescriptor) {
+		if (!battleResults.hasNext())
+			return super.getResolution(battleDescriptor);
+		return makeResolution(battleDescriptor, battleResults.next());
 	}
 }

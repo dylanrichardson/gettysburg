@@ -1,24 +1,20 @@
 package student.gettysburg.engine.common;
 
 import gettysburg.common.*;
-import gettysburg.common.Coordinate;
 import gettysburg.common.exceptions.GbgInvalidActionException;
 import gettysburg.common.exceptions.GbgInvalidMoveException;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.stream.Stream;
 
 import static gettysburg.common.ArmyID.CONFEDERATE;
 import static gettysburg.common.ArmyID.UNION;
+import static gettysburg.common.BattleResult.*;
 import static gettysburg.common.Direction.*;
 import static gettysburg.common.GbgGameStep.*;
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 import static student.gettysburg.engine.GettysburgFactory.makeCoordinate;
 import static student.gettysburg.engine.GettysburgFactory.makeTestGame;
 import static student.gettysburg.engine.common.Battle.makeBattle;
@@ -133,14 +129,14 @@ public class GameTest {
         game.moveUnit(GAMBLE, makeCoordinate(12, 10), makeCoordinate(12, 11));
     }
 
-//    @Test(expected = GbgInvalidMoveException.class)
-//    public void moveUnitBlocked() {
-//        GbgUnit unitA = makeUnit(UNION, 0, EAST, "A", 5, null, null);
-//        testGame.putUnitAt(unitA, 5, 5, EAST);
-//        testGame.putUnitAt(makeUnit(CONFEDERATE, "B"), 7, 4, WEST);
-//        testGame.putUnitAt(makeUnit(CONFEDERATE, "C"), 7, 7, WEST);
-//        game.moveUnit(unitA, makeCoordinate(5, 5), makeCoordinate(5, 8));
-//    }
+    @Test(expected = GbgInvalidMoveException.class)
+    public void moveUnitBlocked() {
+        GbgUnit unitA = makeUnit(UNION, 0, EAST, "A", 3, null, null);
+        testGame.putUnitAt(unitA, 5, 5, EAST);
+        testGame.putUnitAt(makeUnit(CONFEDERATE, "B"), 7, 4, WEST);
+        testGame.putUnitAt(makeUnit(CONFEDERATE, "C"), 7, 7, WEST);
+        game.moveUnit(unitA, makeCoordinate(5, 5), makeCoordinate(8, 5));
+    }
 
     @Test
     public void moveUnitIndirectPath() {
@@ -235,8 +231,191 @@ public class GameTest {
         testGame.clearBoard();
         testGame.putUnitAt(unitA, 5, 5, EAST);
         testGame.putUnitAt(unitB, 6, 5, WEST);
-        testGame.setGameStep(UBATTLE);
+        testGame.setGameStep(UMOVE);
         game.endStep();
+        game.endStep();
+    }
+
+    // resolveBattle
+
+    @Test(expected = GbgInvalidActionException.class)
+    public void resolveBattleNoBattles() {
+        testGame.clearBoard();
+        testGame.setGameStep(UBATTLE);
+        GbgUnit unitA = makeUnit(UNION, "A");
+        GbgUnit unitB = makeUnit(CONFEDERATE, "B");
+        BattleDescriptor battle = makeBattle(singletonList(unitA), singletonList(unitB));
+
+        game.resolveBattle(battle);
+    }
+
+    @Test(expected = GbgInvalidActionException.class)
+    public void resolveBattleInvalidAttacker() {
+        testGame.clearBoard();
+        testGame.setGameStep(UBATTLE);
+        GbgUnit unitA = makeUnit(UNION, "A");
+        GbgUnit unitB = makeUnit(CONFEDERATE, "B");
+        testGame.putUnitAt(unitA, 5, 5, EAST);
+        testGame.putUnitAt(unitB, 6, 5, WEST);
+        Collection<GbgUnit> units = singletonList(unitB);
+        BattleDescriptor battle = makeBattle(units, units);
+
+        game.resolveBattle(battle);
+    }
+
+    @Test(expected = GbgInvalidActionException.class)
+    public void resolveBattleInvalidDefender() {
+        testGame.clearBoard();
+        testGame.setGameStep(UBATTLE);
+        GbgUnit unitA = makeUnit(UNION, "A");
+        GbgUnit unitB = makeUnit(CONFEDERATE, "B");
+        testGame.putUnitAt(unitA, 5, 5, EAST);
+        testGame.putUnitAt(unitB, 6, 5, WEST);
+        Collection<GbgUnit> units = singletonList(unitA);
+        BattleDescriptor battle = makeBattle(units, units);
+
+        game.resolveBattle(battle);
+    }
+
+    @Test
+    public void resolveBattleAELIM() {
+        testGame.clearBoard();
+        testGame.setGameStep(UBATTLE);
+        GbgUnit unitA = makeUnit(UNION, "A");
+        GbgUnit unitB = makeUnit(CONFEDERATE, "B");
+        testGame.putUnitAt(unitA, 5, 5, EAST);
+        testGame.putUnitAt(unitB, 6, 5, WEST);
+        Collection<GbgUnit> attackingUnits = singletonList(unitA);
+        Collection<GbgUnit> defendingUnits = singletonList(unitB);
+        BattleDescriptor battle = makeBattle(attackingUnits, defendingUnits);
+        testGame.setBattleResults(singletonList(AELIM));
+        BattleResolution resolution = game.resolveBattle(battle);
+
+        assertEquals(AELIM, resolution.getBattleResult());
+        assertNull(game.whereIsUnit(unitA));
+        assertEquals(makeCell(6, 5), game.whereIsUnit(unitB));
+    }
+
+    @Test
+    public void resolveBattleDELIM() {
+        testGame.clearBoard();
+        testGame.setGameStep(UBATTLE);
+        GbgUnit unitA = makeUnit(UNION, "A");
+        GbgUnit unitB = makeUnit(CONFEDERATE, "B");
+        testGame.putUnitAt(unitA, 5, 5, EAST);
+        testGame.putUnitAt(unitB, 6, 5, WEST);
+        Collection<GbgUnit> attackingUnits = singletonList(unitA);
+        Collection<GbgUnit> defendingUnits = singletonList(unitB);
+        BattleDescriptor battle = makeBattle(attackingUnits, defendingUnits);
+        testGame.setBattleResults(singletonList(DELIM));
+        BattleResolution resolution = game.resolveBattle(battle);
+
+        assertEquals(DELIM, resolution.getBattleResult());
+        assertEquals(makeCell(5, 5), game.whereIsUnit(unitA));
+        assertNull(game.whereIsUnit(unitB));
+    }
+
+    @Test
+    public void resolveBattleEXCHANGEHQ() {
+        testGame.clearBoard();
+        testGame.setGameStep(UBATTLE);
+        GbgUnit unitA = makeUnit(UNION, "A");
+        GbgUnit unitB = makeUnit(CONFEDERATE, "B");
+        testGame.putUnitAt(unitA, 5, 5, EAST);
+        testGame.putUnitAt(unitB, 6, 5, WEST);
+        Collection<GbgUnit> attackingUnits = singletonList(unitA);
+        Collection<GbgUnit> defendingUnits = singletonList(unitB);
+        BattleDescriptor battle = makeBattle(attackingUnits, defendingUnits);
+        testGame.setBattleResults(singletonList(EXCHANGE));
+        BattleResolution resolution = game.resolveBattle(battle);
+
+        assertEquals(EXCHANGE, resolution.getBattleResult());
+        assertEquals(makeCell(5, 5), game.whereIsUnit(unitA));
+        assertEquals(makeCell(6, 5), game.whereIsUnit(unitB));
+    }
+
+    @Test
+    public void resolveBattleEXCHANGE() {
+        testGame.clearBoard();
+        testGame.setGameStep(UBATTLE);
+        GbgUnit unitA = makeUnit(UNION, 1, EAST, "A", 0, null, null);
+        GbgUnit unitB = makeUnit(CONFEDERATE, 1, EAST, "B", 0, null, null);
+        testGame.putUnitAt(unitA, 5, 5, EAST);
+        testGame.putUnitAt(unitB, 6, 5, WEST);
+        Collection<GbgUnit> attackingUnits = singletonList(unitA);
+        Collection<GbgUnit> defendingUnits = singletonList(unitB);
+        BattleDescriptor battle = makeBattle(attackingUnits, defendingUnits);
+        testGame.setBattleResults(singletonList(EXCHANGE));
+        BattleResolution resolution = game.resolveBattle(battle);
+
+        assertEquals(EXCHANGE, resolution.getBattleResult());
+        assertNull(game.whereIsUnit(unitA));
+        assertNull(game.whereIsUnit(unitB));
+    }
+
+    @Test
+    public void resolveBattleABACK() {
+        testGame.clearBoard();
+        testGame.setGameStep(UBATTLE);
+        GbgUnit unitA = makeUnit(UNION, 1, EAST, "A", 1, null, null);
+        GbgUnit unitB = makeUnit(CONFEDERATE, 1, EAST, "B", 1, null, null);
+        testGame.putUnitAt(unitA, 5, 5, EAST);
+        testGame.putUnitAt(unitB, 6, 5, WEST);
+        Collection<GbgUnit> attackingUnits = singletonList(unitA);
+        Collection<GbgUnit> defendingUnits = singletonList(unitB);
+        BattleDescriptor battle = makeBattle(attackingUnits, defendingUnits);
+        testGame.setBattleResults(singletonList(ABACK));
+        BattleResolution resolution = game.resolveBattle(battle);
+
+        assertEquals(ABACK, resolution.getBattleResult());
+        assertNotEquals(makeCell(5, 5), game.whereIsUnit(unitA));
+        assertNotNull(game.whereIsUnit(unitA));
+        assertEquals(makeCell(6, 5), game.whereIsUnit(unitB));
+    }
+
+    @Test
+    public void resolveBattleDBACK() {
+        testGame.clearBoard();
+        testGame.setGameStep(UBATTLE);
+        GbgUnit unitA = makeUnit(UNION, 1, EAST, "A", 1, null, null);
+        GbgUnit unitB = makeUnit(CONFEDERATE, 1, EAST, "B", 1, null, null);
+        testGame.putUnitAt(unitA, 5, 5, EAST);
+        testGame.putUnitAt(unitB, 6, 5, WEST);
+        Collection<GbgUnit> attackingUnits = singletonList(unitA);
+        Collection<GbgUnit> defendingUnits = singletonList(unitB);
+        BattleDescriptor battle = makeBattle(attackingUnits, defendingUnits);
+        testGame.setBattleResults(singletonList(DBACK));
+        BattleResolution resolution = game.resolveBattle(battle);
+
+        assertEquals(DBACK, resolution.getBattleResult());
+        assertEquals(makeCell(5, 5), game.whereIsUnit(unitA));
+        assertNotEquals(makeCell(6, 5), game.whereIsUnit(unitB));
+        assertNotNull(game.whereIsUnit(unitB));
+    }
+
+    @Test
+    public void resolveBattleRetreatNoSquares() {
+        testGame.clearBoard();
+        testGame.setGameStep(UBATTLE);
+        GbgUnit unitA = makeUnit(UNION, 0, EAST, "A", 1, null, null);
+        GbgUnit unitB = makeUnit(CONFEDERATE, "B");
+        GbgUnit unitC = makeUnit(CONFEDERATE, "C");
+        GbgUnit unitD = makeUnit(CONFEDERATE, "D");
+        testGame.putUnitAt(unitA, 5, 5, EAST);
+        testGame.putUnitAt(unitB, 4, 4, SOUTHEAST);
+        testGame.putUnitAt(unitC, 6, 4, SOUTHWEST);
+        testGame.putUnitAt(unitD, 5, 7, NORTH);
+        Collection<GbgUnit> attackingUnits = singletonList(unitA);
+        Collection<GbgUnit> defendingUnits = singletonList(unitB);
+        BattleDescriptor battle = makeBattle(attackingUnits, defendingUnits);
+        testGame.setBattleResults(singletonList(ABACK));
+        BattleResolution resolution = game.resolveBattle(battle);
+
+        assertEquals(ABACK, resolution.getBattleResult());
+        assertNull(game.whereIsUnit(unitA));
+        assertEquals(makeCell(4, 4), game.whereIsUnit(unitB));
+        assertEquals(makeCell(6, 4), game.whereIsUnit(unitC));
+        assertEquals(makeCell(5, 7), game.whereIsUnit(unitD));
     }
 
 }

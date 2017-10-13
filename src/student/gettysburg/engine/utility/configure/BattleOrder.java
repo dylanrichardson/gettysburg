@@ -34,7 +34,7 @@ public class BattleOrder {
 				Arrays.stream(confederateBattleOrder));
 	}
 
-	private static UnitInitializer[] confederateBattleOrder = {
+	private static final UnitInitializer[] confederateBattleOrder = {
 			mcu(0, 8, 8, 4, EAST, "Heth", 2, DIVISION, INFANTRY),        // Turn 0: start of game
 			mcu(2, 1, 5, 0, EAST, "Hill", 8, ARMY, HQ),            // Turn 2: 7/1 0700
 			mcu(2, 1, 5, 4, EAST, "Pender", 2, DIVISION, INFANTRY),
@@ -64,7 +64,7 @@ public class BattleOrder {
 			mcu(23, 1, 5, 1, EAST, "Jones", 4, BRIGADE, CAVALRY),
 	};
 	
-	private static UnitInitializer[] unionBattleOrder = {
+	private static final UnitInitializer[] unionBattleOrder = {
 			muu(0, 11, 11, 1, WEST, "Gamble", 4, BRIGADE, CAVALRY),      // Turn 0: start of game
 			muu(0, 13, 9, 1, SOUTH, "Devin", 4, BRIGADE, CAVALRY),
 			muu(0, 7, 28, 0, NORTHEAST, "Reynolds", 8, ARMY, HQ),

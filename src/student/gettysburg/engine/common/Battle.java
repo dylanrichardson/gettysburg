@@ -1,19 +1,27 @@
 package student.gettysburg.engine.common;
 
+import gettysburg.common.ArmyID;
 import gettysburg.common.BattleDescriptor;
 import gettysburg.common.GbgUnit;
 
 import java.util.Collection;
 
-public class Battle implements BattleDescriptor {
+import static gettysburg.common.ArmyID.UNION;
+import static java.util.Collections.emptyList;
+
+class Battle implements BattleDescriptor {
 
 
-    private Collection<GbgUnit> attackers;
-    private Collection<GbgUnit> defenders;
+    private final Collection<GbgUnit> attackers;
+    private final Collection<GbgUnit> defenders;
+    private final Double defendingCombatFactor;
+    private final Double attackingCombatFactor;
 
     private Battle(Collection<GbgUnit> attackers, Collection<GbgUnit> defenders) {
         this.attackers = attackers;
         this.defenders = defenders;
+        defendingCombatFactor = sumCombatFactor(defenders);
+        attackingCombatFactor = sumCombatFactor(attackers);
     }
 
     static Battle makeBattle(BattleDescriptor battleDescriptor) {
@@ -21,7 +29,7 @@ public class Battle implements BattleDescriptor {
     }
 
     static Battle makeBattle(Collection<GbgUnit> attackers, Collection<GbgUnit> defenders) {
-        return new Battle(attackers, defenders);
+        return new Battle(attackers != null ? attackers : emptyList(), defenders != null ? defenders : emptyList());
     }
 
     @Override
@@ -34,12 +42,17 @@ public class Battle implements BattleDescriptor {
         return defenders;
     }
 
-    Double getOdds() {
-        return new Double(getAttackingCombatFactor()) / getDefendingCombatFactor();
+    Double getBattleRatio() {
+        if (defendingCombatFactor == 0) {
+            if (attackingCombatFactor == 0)
+                return 1.0;
+            return 6.0;
+        }
+        return attackingCombatFactor / defendingCombatFactor;
     }
 
-    private Integer sumCombatFactor(Collection<GbgUnit> units) {
-        return units.stream().mapToInt(GbgUnit::getCombatFactor).sum();
+    private Double sumCombatFactor(Collection<GbgUnit> units) {
+        return units.stream().mapToDouble(GbgUnit::getCombatFactor).sum();
     }
 
     @Override
@@ -60,11 +73,15 @@ public class Battle implements BattleDescriptor {
         return result;
     }
 
-    Integer getAttackingCombatFactor() {
-        return sumCombatFactor(attackers);
+    Double getAttackingCombatFactor() {
+        return attackingCombatFactor;
     }
 
-    Integer getDefendingCombatFactor() {
-        return sumCombatFactor(defenders);
+    Double getDefendingCombatFactor() {
+        return defendingCombatFactor;
+    }
+
+    ArmyID getAttackingArmy() {
+        return attackers.stream().findFirst().map(GbgUnit::getArmy).orElse(UNION);
     }
 }
